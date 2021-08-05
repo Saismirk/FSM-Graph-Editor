@@ -28,7 +28,7 @@ namespace FSM.Graph {
             window.parameterPanelStyle = new GUIStyle();
             window.parameterPanelStyle.normal.background = EditorGUIUtility.Load("icons/d_AvatarBlendBackground.png") as Texture2D;
             window.GenerateGraphView();
-            window.GeneratePrameterList();
+            window.GenerateParameterList();
             window.GenerateToolbar();
         }
         void OnEnable() {
@@ -37,7 +37,7 @@ namespace FSM.Graph {
             parameterPanelStyle = new GUIStyle();
             parameterPanelStyle.normal.background = EditorGUIUtility.Load("icons/d_AvatarBlendBackground.png") as Texture2D;
             GenerateGraphView();
-            GeneratePrameterList();
+            GenerateParameterList();
             GenerateToolbar(); 
         }
 
@@ -46,14 +46,14 @@ namespace FSM.Graph {
             controller = newController;
             OnControllerSelected?.Invoke(controller);
             serializedObject = new SerializedObject(controller);
-            GeneratePrameterList();
+            GenerateParameterList();
             graphView?.ChangeController(controller);
             PopulateToolbarLayers(controller);
         }
 
         void OnGUI() {
             if (controller == null) {
-                controller = Resources.Load<StateMachineController>("StateMachineEditor/DefaultStateMachineController");
+                controller = Resources.Load<StateMachineController>("FSMEditor/DefaultStateMachineController");
                 ReloadGraph(controller);
                 return;
             }
@@ -151,7 +151,7 @@ namespace FSM.Graph {
             GUILayout.EndArea();
         }
 
-        void GeneratePrameterList() {
+        void GenerateParameterList() {
             parameterProp = serializedObject.FindProperty("parameters");
             parameterList = new ReorderableList(serializedObject, parameterProp, true, true, true, true);
             parameterList.drawElementCallback = (rect, index, isActive, isFocused) => {

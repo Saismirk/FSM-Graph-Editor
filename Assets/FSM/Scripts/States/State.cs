@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using System.Reflection;
+using System.IO;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditorInternal;
@@ -95,7 +95,10 @@ namespace FSM {
             State Controller => target as State;
             ReorderableList behaviourList;
             SerializedProperty behaviourProp;
+            const string pathToSettings = "Assets/Editor/FSMEditor/FSMSettings.asset";
+            
             private void OnEnable() {
+                
                 behaviourProp = serializedObject.FindProperty("stateBehaviours");
                 behaviourList = new ReorderableList(serializedObject, behaviourProp, true, true, true, true);
                 behaviourList.drawElementCallback = (rect, index, isActive, isFocused) => {
@@ -111,6 +114,7 @@ namespace FSM {
                     behaviourTypes.ForEach(type => {
                         menu.AddItem(new GUIContent(type.Name), false, BehaviourCreationHandler, type);
                     });
+                    menu.AddItem(new GUIContent("Create New Behaviour"), false, CreateBehaviourHandler, null);
                     menu.ShowAsContext();
                 };
                 behaviourList.onRemoveCallback = list => {
@@ -120,6 +124,15 @@ namespace FSM {
                     serializedObject.ApplyModifiedProperties();
                     EditorUtility.SetDirty(this);
                 };
+            }
+            void CreateBehaviourHandler(object targetObject) {
+                var settings = AssetDatabase.LoadAssetAtPath<FSMSettings>(pathToSettings);
+                var pathToScript = AssetDatabase.GenerateUniqueAssetPath(settings.PathToBehaviours + "NewStateBehaviour.cs");
+                Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(settings.PathToTemplate);
+                ProjectWindowUtil.CreateScriptAssetFromTemplateFile(settings.PathToTemplate, Path.GetFileName(pathToScript));
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(pathToScript);
             }
 
             void BehaviourCreationHandler(object targetObject) {

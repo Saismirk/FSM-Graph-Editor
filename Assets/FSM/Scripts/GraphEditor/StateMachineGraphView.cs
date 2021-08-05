@@ -17,7 +17,7 @@ namespace FSM.Graph {
         List<string> nodeCopyCache;
         string lastKnownGuid;
         public StateMachineGraphView(StateMachineGraphWindow window) {
-            styleSheets.Add(Resources.Load<StyleSheet>("StateMachineEditor/StateMachineGraphStyle"));
+            styleSheets.Add(Resources.Load<StyleSheet>("FSMEditor/StateMachineGraphStyle"));
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale * 2);
             Insert(0, new GridBackground());
             this.AddManipulator(new ContentDragger());
