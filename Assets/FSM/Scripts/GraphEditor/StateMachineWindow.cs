@@ -1,16 +1,15 @@
-using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 using System.Linq;
-using FSM;
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEditor.Experimental.GraphView;
 using UnityEditorInternal;
 #endif
 namespace FSM.Graph {
-    public class StateMachineGraphWindow : EditorWindow {
+    public class StateMachineGraphWindow : GraphViewEditorWindow {
         public StateMachineController controller;
         StateMachineGraphView graphView;
         GUIStyle parameterPanelStyle;
@@ -20,8 +19,9 @@ namespace FSM.Graph {
         private Toolbar toolbar;
         public static event System.Action<StateMachineController> OnControllerSelected;
 
-        public static void OpenGraphWindow(StateMachineController controller, bool isRuntime = false) {
+        public static void OpenGraphWindow(StateMachineController controller) {
             var window = GetWindow<StateMachineGraphWindow>();
+
             window.controller = controller;
             window.titleContent = new GUIContent("State Machine Editor");
             serializedObject = new SerializedObject(controller);
@@ -30,6 +30,7 @@ namespace FSM.Graph {
             window.GenerateGraphView();
             window.GenerateParameterList();
             window.GenerateToolbar();
+            window.Show();
         }
         void OnEnable() {
             if (controller == null) return;
@@ -44,9 +45,10 @@ namespace FSM.Graph {
         public void ReloadGraph(StateMachineController newController) {
             if (newController == null) return;
             controller = newController;
+            graphView.Init(controller.parameters);
             OnControllerSelected?.Invoke(controller);
             serializedObject = new SerializedObject(controller);
-            GenerateParameterList();
+            //GenerateParameterList();
             graphView?.ChangeController(controller);
             PopulateToolbarLayers(controller);
         }
@@ -57,31 +59,35 @@ namespace FSM.Graph {
                 ReloadGraph(controller);
                 return;
             }
-            graphView.style.width = position.width - 305;
-            DrawParameterPanel();
+            //graphView.style.width = position.width - 305;
+            //DrawParameterPanel();
             if (graphView.selection.Count > 0) {
                 var selection = graphView.selection[0] as Edge;
-                if (selection != null) {
-                    var input = selection.input.node is StateMachineNode
-                        ? (selection.input.node as StateMachineNode).state
-                        : (selection.input.node as SubStateMachineNode).subStateMachine.GetEntryState();
-                    var output = selection.output.node is StateMachineNode
-                        ? (selection.output.node as StateMachineNode).state
-                        : (selection.output.node as SubStateMachineNode).subStateMachine.GetExitState();
-                    Selection.activeObject = output.transitions.Where(t => t.stateToTransition == input).First();
+                if (selection != null && !selection.isGhostEdge) {
+                    if (selection.input != null && selection.output != null) { 
+                        var input = selection.input?.node is StateMachineNode
+                            ? (selection.input.node as StateMachineNode).state
+                            : (selection.input.node as SubStateMachineNode).subStateMachine?.GetEntryState();
+                        var output = selection.output?.node is StateMachineNode
+                            ? (selection.output.node as StateMachineNode).state
+                            : (selection.output.node as SubStateMachineNode).subStateMachine?.GetExitState();
+                        Selection.activeObject = output.transitions.Where(t => t.stateToTransition == input).First();
+                    }
                 }
             }
         }   
         private void OnSelectionChange() {
             if (Selection.activeGameObject != null && Selection.activeGameObject.TryGetComponent<StateMachineRuntime>(out var runtime)) {
                 if (runtime.controllerInstance != controller) {
-                    ReloadGraph(!Application.isPlaying ? runtime.controller : runtime.controllerInstance);
+                    var c = !Application.isPlaying ? runtime.controller : runtime.controllerInstance;
+                    ReloadGraph(c);
                 }
                 return;
             }
             if (Selection.activeObject as StateMachineController) {
                 if (Selection.activeObject as StateMachineController != controller) {
-                    ReloadGraph(Selection.activeObject as StateMachineController);
+                    var c = Selection.activeObject as StateMachineController;
+                    ReloadGraph(c);
                 }
                 return;
             }
@@ -92,8 +98,7 @@ namespace FSM.Graph {
             graphView = new StateMachineGraphView(this);
             graphView.controller = controller;
             graphView.StretchToParentSize();
-            graphView.style.width = position.width - 305;
-            
+            graphView.Init(controller.parameters);
             rootVisualElement.Add(graphView);
             graphView.PopulateGraph();
         }
@@ -113,6 +118,19 @@ namespace FSM.Graph {
             rootVisualElement.Add(toolbar);
         }
 
+        void GenerateBlackboard() {
+            var blackboard = new Blackboard(graphView);
+            blackboard.Add(new BlackboardSection(){
+                title = "Properties"
+            });
+            blackboard.capabilities &= Capabilities.Movable;
+            blackboard.SetPosition(new Rect(20, 30, 200, 300));
+            blackboard.addItemRequested = bb => {
+
+            };
+            graphView.AddElement(blackboard);
+        }
+
         public void AddSubStateLayerButton(StateMachineControllerBase newController){
             var newLayerButton = new Button(() => {
                 graphView?.ChangeController(newController);
@@ -124,7 +142,7 @@ namespace FSM.Graph {
         }
 
         public void PopulateToolbarLayers(StateMachineControllerBase newController) {
-            toolbar.Clear();
+            toolbar?.Clear();
             var parents = new List<StateMachineControllerBase>();
             newController.GetParents(ref parents);
             parents.Reverse();

@@ -6,6 +6,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditorInternal;
 #endif
+
 namespace FSM {
     [System.Serializable]
     [CreateAssetMenu()]
@@ -96,7 +97,6 @@ namespace FSM {
             ReorderableList behaviourList;
             SerializedProperty behaviourProp;
             const string pathToSettings = "Assets/Editor/FSMEditor/FSMSettings.asset";
-            
             private void OnEnable() {
                 
                 behaviourProp = serializedObject.FindProperty("stateBehaviours");
@@ -134,7 +134,6 @@ namespace FSM {
                 AssetDatabase.Refresh();
                 Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(pathToScript);
             }
-
             void BehaviourCreationHandler(object targetObject) {
                 var type = targetObject as System.Type;
                 var index = behaviourList.serializedProperty.arraySize;
@@ -149,11 +148,11 @@ namespace FSM {
                 AssetDatabase.SaveAssets();
                 EditorUtility.SetDirty(this);
             }
-
             public override void OnInspectorGUI() {
                 var transitionsProp = serializedObject.FindProperty("transitions");
                 var stateNameProp = serializedObject.FindProperty("stateName");
                 EditorGUILayout.PropertyField(stateNameProp);
+                serializedObject.ApplyModifiedProperties();
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(transitionsProp);
                 if (EditorGUI.EndChangeCheck()) {

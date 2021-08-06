@@ -8,15 +8,15 @@ namespace FSM {
         public StateMachineController controller;
         public string activeState;
         public bool selected;
-        
+        public static event System.Action<string> OnParameterChanged;
         public StateMachineController controllerInstance;
         private void Start() {
             if (controller == null) return;
-            controllerInstance = controller.Clone();  
+            controllerInstance = controller.Clone(this);  
             if (EditorWindow.HasOpenInstances<StateMachineGraphWindow>()){
                 var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
                 if (window.controller == controller) {
-                    window.ReloadGraph(controllerInstance);
+                    StateMachineGraphWindow.OpenGraphWindow(controllerInstance);
                     selected = true;
                 }
             }          
@@ -45,9 +45,27 @@ namespace FSM {
             activeState = controllerInstance.CurrentState == null ? "No State" : controllerInstance.CurrentState.stateName;
             controllerInstance?.UpdateCurrentState(this, selected);
         }
-        public void SetFloat(string parameter, float value) => controllerInstance.GetParameter<FloatParameter>(parameter).value.FloatValue = value;
-        public void SetInt(string parameter, int value) => controllerInstance.GetParameter<IntParameter>(parameter).value.IntValue = value;
-        public void SetBool(string parameter, bool value) => controllerInstance.GetParameter<BoolParameter>(parameter).value.BoolValue = value;
+        public void SetFloat(string parameter, float value) {
+            var param = controllerInstance.GetParameter<FloatParameter>(parameter);
+            if (param.value.FloatValue != value) {
+                param.value.FloatValue = value;
+                if (selected) OnParameterChanged?.Invoke(param.name);
+            }
+        }
+        public void SetInt(string parameter, int value) {
+            var param = controllerInstance.GetParameter<IntParameter>(parameter);
+            if (param.value.IntValue != value) {
+                param.value.IntValue = value;
+                if (selected) OnParameterChanged?.Invoke(param.name);
+            }
+        }
+        public void SetBool(string parameter, bool value) {
+            var param = controllerInstance.GetParameter<BoolParameter>(parameter);
+            if (param.value.BoolValue != value) {
+                param.value.BoolValue = value;
+                if (selected) OnParameterChanged?.Invoke(param.name);
+            }
+        }
         public float GetFloat(string parameter) => controllerInstance.GetParameter<FloatParameter>(parameter).value.FloatValue;
         public int GetInt(string parameter) => controllerInstance.GetParameter<IntParameter>(parameter).value.IntValue;
         public bool GetBool(string parameter) => controllerInstance.GetParameter<BoolParameter>(parameter).value.BoolValue;

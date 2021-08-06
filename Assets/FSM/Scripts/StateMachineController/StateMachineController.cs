@@ -48,14 +48,18 @@ namespace FSM {
             asset.CreateState(typeof(EntryState), default, false);
             asset.CreateState(typeof(ExitState), new Vector2(300, 0), false);
         }
-        public StateMachineController Clone() {
-            var controller = Instantiate(this) as StateMachineController;
-            controller.parameters = new List<ParameterWrapper>();
+        public StateMachineController Clone(StateMachineRuntime stateMachine) {
+            var controller = Instantiate(this);
+            controller.Init(stateMachine);
             parameters.ForEach(parameter => {
                 controller.parameters.Add(parameter.Clone());
             });
             InitalizeControllers(controller);
             return controller;
+        }
+        public void Init(StateMachineRuntime stateMachine) {
+            runtime = stateMachine;
+            parameters = new List<ParameterWrapper>();
         }
         public void OnEnable() {
             if (states.Count == 0){
