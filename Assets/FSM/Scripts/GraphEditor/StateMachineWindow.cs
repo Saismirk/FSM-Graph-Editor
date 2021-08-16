@@ -12,66 +12,113 @@ namespace FSM.Graph {
     public class StateMachineGraphWindow : GraphViewEditorWindow {
         public StateMachineController controller;
         StateMachineGraphView graphView;
-        GUIStyle parameterPanelStyle;
         ReorderableList parameterList;
+        VisualElement mainContainer;
+        VisualElement root;
+        VisualElement subLayerContainer;
+        ToolbarButton inspectorButton;
+        ToolbarButton parameterButton;
+        ToolbarMenu subStateMenu;
         SerializedProperty parameterProp;
         static SerializedObject serializedObject;
         private Toolbar toolbar;
-        public static event System.Action<StateMachineController> OnControllerSelected;
+        private Edge selectedEdge;
+        Vector2 currentSize;
+        private Button blackboardButton;
 
+        bool CanvasHasResized {
+            get {
+                if (currentSize != position.size) {
+                    currentSize = position.size;
+                    return true;
+                }
+                return false;
+            }
+        }
+        public static event System.Action<StateMachineController> OnControllerSelected;
         public static void OpenGraphWindow(StateMachineController controller) {
             var window = GetWindow<StateMachineGraphWindow>();
-
             window.controller = controller;
             window.titleContent = new GUIContent("State Machine Editor");
-            serializedObject = new SerializedObject(controller);
-            window.parameterPanelStyle = new GUIStyle();
-            window.parameterPanelStyle.normal.background = EditorGUIUtility.Load("icons/d_AvatarBlendBackground.png") as Texture2D;
+            window.InitializeWindow();
             window.GenerateGraphView();
-            window.GenerateParameterList();
-            window.GenerateToolbar();
             window.Show();
         }
         void OnEnable() {
             if (controller == null) return;
             serializedObject = new SerializedObject(controller);
-            parameterPanelStyle = new GUIStyle();
-            parameterPanelStyle.normal.background = EditorGUIUtility.Load("icons/d_AvatarBlendBackground.png") as Texture2D;
-            GenerateGraphView();
-            GenerateParameterList();
-            GenerateToolbar(); 
+            InitializeWindow();
         }
-
-        public void ReloadGraph(StateMachineController newController) {
+        void InitializeWindow(){
+            rootVisualElement.Clear();
+            var uxml = Resources.Load<VisualTreeAsset>("FSMEditor/UXML/StateMachineGraphWindow");
+            serializedObject = new SerializedObject(controller);
+            root = uxml.Instantiate();
+            mainContainer = root.Q("MainContainer");
+            subLayerContainer = root.Q("SubLayerContainer");
+            inspectorButton = root.Q<ToolbarButton>(name: "InspectorButton");
+            inspectorButton.style.backgroundColor = Color.white * 0.5f;
+            inspectorButton.clicked += () => {
+                graphView?.ToggleInspector();
+                inspectorButton.style.backgroundColor = inspectorButton.style.backgroundColor != Color.clear ? Color.clear : Color.white * 0.5f;
+            };
+            parameterButton = root.Q<ToolbarButton>(name: "ParametersButton");
+            parameterButton.style.backgroundColor = Color.white * 0.5f;
+            parameterButton.clicked += () => {
+                graphView?.ToggleBlackboard();
+                parameterButton.style.backgroundColor = parameterButton.style.backgroundColor != Color.clear ? Color.clear : Color.white * 0.5f;
+            };
+            subStateMenu = root.Q<ToolbarMenu>(name: "SubStateMenu");
+            rootVisualElement.Add(root);
+            root.StretchToParentSize();
+            AddSubStateLayerButton(controller);
+            GenerateGraphView();
+            AddSubStatesToMenu();
+        }
+        internal void AddSubStatesToMenu() {
+            if (controller == null || subStateMenu == null) return;
+            while (subStateMenu?.menu.MenuItems()?.Count > 0) {
+                subStateMenu.menu.RemoveItemAt(0);
+            }
+            var subStates =  new List<StateMachineControllerBase>();
+            subStates.Add(controller);
+            controller.GetAndAddAllSubStates(ref subStates);
+            subStates.Sort((s1,s2) => s1.depth.CompareTo(s2.depth));
+            subStates.ForEach(subState => {
+                subStateMenu?.menu.AppendAction(subState.GetPath(true), action => {
+                    graphView?.ChangeController(subState);
+                    PopulateToolbarLayers(subState);
+                });
+            });
+        }
+        internal void ReloadGraph(StateMachineController newController) {
             if (newController == null) return;
             controller = newController;
-            graphView.Init(controller.parameters);
+            
+            graphView.Init(controller.parameters, controller.properties);
             OnControllerSelected?.Invoke(controller);
             serializedObject = new SerializedObject(controller);
-            //GenerateParameterList();
             graphView?.ChangeController(controller);
             PopulateToolbarLayers(controller);
         }
-
         void OnGUI() {
             if (controller == null) {
                 controller = Resources.Load<StateMachineController>("FSMEditor/DefaultStateMachineController");
                 ReloadGraph(controller);
                 return;
             }
-            //graphView.style.width = position.width - 305;
-            //DrawParameterPanel();
-            if (graphView.selection.Count > 0) {
-                var selection = graphView.selection[0] as Edge;
-                if (selection != null && !selection.isGhostEdge) {
-                    if (selection.input != null && selection.output != null) { 
-                        var input = selection.input?.node is StateMachineNode
-                            ? (selection.input.node as StateMachineNode).state
-                            : (selection.input.node as SubStateMachineNode).subStateMachine?.GetEntryState();
-                        var output = selection.output?.node is StateMachineNode
-                            ? (selection.output.node as StateMachineNode).state
-                            : (selection.output.node as SubStateMachineNode).subStateMachine?.GetExitState();
-                        Selection.activeObject = output.transitions.Where(t => t.stateToTransition == input).First();
+            graphView?.UpdateGraphElementPositions();
+            if (CanvasHasResized) graphView?.FitGraphElementsInCanvas(position);
+            if (graphView?.selection.Count > 0) {
+                var newSelection = graphView.selection[0] as Edge;
+                if (selectedEdge == newSelection) return;
+                selectedEdge = newSelection;
+                if (selectedEdge != null && !selectedEdge.isGhostEdge) {
+                    if (selectedEdge.input != null && selectedEdge.output != null) { 
+                        if (!graphView.TransitionMap.TryGetValue(selectedEdge, out (State parent, State child) states)) return;
+                        var input = states.child;
+                        var output = states.parent;
+                        graphView?.SetInspectorDisplay(output?.transitions?.First(t => t?.stateToTransition == input)); 
                     }
                 }
             }
@@ -92,57 +139,36 @@ namespace FSM.Graph {
                 return;
             }
         }
-
         void GenerateGraphView() {
-            if (graphView != null && rootVisualElement.Contains(graphView)) rootVisualElement.Remove(graphView);
+            graphView?.RemoveFromHierarchy();
             graphView = new StateMachineGraphView(this);
             graphView.controller = controller;
+            graphView.main = controller;
             graphView.StretchToParentSize();
-            graphView.Init(controller.parameters);
-            rootVisualElement.Add(graphView);
+            graphView.Init(controller.parameters, controller.properties);
+            mainContainer.Add(graphView);
             graphView.PopulateGraph();
         }
-
-        void GenerateToolbar() {
-            if (rootVisualElement.Contains(toolbar)) {
-                rootVisualElement.Remove(toolbar);
-            }
-            toolbar = new Toolbar();
-            var mainButton = new Button(() => {
-                graphView?.ChangeController(controller);
-                PopulateToolbarLayers(controller);
-            }){
-                text = "Main",
-            };
-            toolbar.Add(mainButton);
-            rootVisualElement.Add(toolbar);
-        }
-
-        void GenerateBlackboard() {
-            var blackboard = new Blackboard(graphView);
-            blackboard.Add(new BlackboardSection(){
-                title = "Properties"
-            });
-            blackboard.capabilities &= Capabilities.Movable;
-            blackboard.SetPosition(new Rect(20, 30, 200, 300));
-            blackboard.addItemRequested = bb => {
-
-            };
-            graphView.AddElement(blackboard);
-        }
-
         public void AddSubStateLayerButton(StateMachineControllerBase newController){
             var newLayerButton = new Button(() => {
                 graphView?.ChangeController(newController);
                 PopulateToolbarLayers(newController);
             }){
-                text = newController is StateMachineController ? "Main" : $"{newController.name} {newController.depth}",
+                text = newController is StateMachineController ? " Main " : $" {newController.name} ",
             };
-            toolbar.Add(newLayerButton);
+            newLayerButton.style.fontSize = 10;
+            newLayerButton.style.borderTopLeftRadius = 6;
+            newLayerButton.style.borderBottomRightRadius = 6;
+            newLayerButton.style.borderBottomLeftRadius = 6;
+            newLayerButton.style.borderTopRightRadius = 6;
+            var sepLabel = new Label(">");
+            sepLabel.style.fontSize = 10;
+            if (newController is SubStateMachineController) subLayerContainer.Add(sepLabel);
+            subLayerContainer.Add(newLayerButton);
         }
-
         public void PopulateToolbarLayers(StateMachineControllerBase newController) {
-            toolbar?.Clear();
+            if (subLayerContainer == null) return;
+            subLayerContainer?.Clear();
             var parents = new List<StateMachineControllerBase>();
             newController.GetParents(ref parents);
             parents.Reverse();
@@ -150,62 +176,6 @@ namespace FSM.Graph {
                 AddSubStateLayerButton(parent);
             });
             AddSubStateLayerButton(newController);
-        }
-
-        void DrawParameterPanel() {
-            var paramentePanelRect = new Rect(position.width - 300, EditorGUIUtility.singleLineHeight, 300, position.height);
-            var paramentePanelBorderRect = new Rect(position.width - 305, EditorGUIUtility.singleLineHeight, 5, position.height);
-            GUILayout.BeginArea(paramentePanelRect);
-            serializedObject.Update();
-            EditorGUI.BeginChangeCheck();
-            parameterList.DoLayoutList();
-            if (EditorGUI.EndChangeCheck()) {
-                controller.GenerateListOfParameters();
-            }
-            serializedObject.ApplyModifiedProperties(); 
-            GUILayout.EndArea();
-
-            GUILayout.BeginArea(paramentePanelBorderRect, parameterPanelStyle);
-            GUILayout.EndArea();
-        }
-
-        void GenerateParameterList() {
-            parameterProp = serializedObject.FindProperty("parameters");
-            parameterList = new ReorderableList(serializedObject, parameterProp, true, true, true, true);
-            parameterList.drawElementCallback = (rect, index, isActive, isFocused) => {
-                var parameter = parameterList.serializedProperty.GetArrayElementAtIndex(index);
-                EditorGUI.PropertyField(rect, parameter, GUIContent.none);
-            };
-            parameterList.drawHeaderCallback = rect => {
-                EditorGUI.LabelField(rect, "Parameters");
-            };
-            parameterList.onAddDropdownCallback = (rect, list) => {
-                var menu = new GenericMenu();
-                menu.AddItem(new GUIContent("Float Parameter"), false, ParameterCreationHandler<FloatParameter>, new ParameterWrapper());
-                menu.AddItem(new GUIContent("Int Parameter"), false, ParameterCreationHandler<IntParameter>, new ParameterWrapper());
-                menu.AddItem(new GUIContent("Bool Parameter"), false, ParameterCreationHandler<BoolParameter>, new ParameterWrapper());
-                menu.ShowAsContext();
-                controller.GenerateListOfParameters();
-            };
-            parameterList.onRemoveCallback = list => {
-                var element = list.serializedProperty.GetArrayElementAtIndex(list.index);
-                controller.RemoveParameter(element.FindPropertyRelative("parameter").objectReferenceValue as Parameter);
-                ReorderableList.defaultBehaviours.DoRemoveButton(list);
-                controller.GenerateListOfParameters();
-            };
-        }
-
-        void ParameterCreationHandler<T>(object targetObject) where T : Parameter {
-            var index = parameterList.serializedProperty.arraySize;
-            parameterProp.arraySize++;
-            parameterList.index = index;
-            var element = parameterList.serializedProperty.GetArrayElementAtIndex(index);
-            var newParameter = CreateInstance<T>();
-            newParameter.name = typeof(T).Name;
-            controller.AddParameter(newParameter);
-            element.FindPropertyRelative("parameter").objectReferenceValue = newParameter;
-            element.FindPropertyRelative("parameterName").stringValue = $"New {typeof(T).Name}";
-            serializedObject.ApplyModifiedProperties();
         }
     }
 }

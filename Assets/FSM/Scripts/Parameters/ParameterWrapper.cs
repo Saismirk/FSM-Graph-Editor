@@ -5,6 +5,7 @@ using UnityEditor;
 #endif
 [Serializable]
 public class ParameterWrapper {
+    public int parameterID;
     public string parameterName;
     public Parameter parameter;
     public ParameterWrapper Clone() {
@@ -12,13 +13,13 @@ public class ParameterWrapper {
         param.parameterName = parameterName;
         param.parameter = ScriptableObject.Instantiate(parameter);
         param.parameter.name = parameter.name;
+        parameterID = parameter.name.GetHashCode();
         return param;
     }
 }
-
 #if UNITY_EDITOR
 [CustomPropertyDrawer(typeof(ParameterWrapper))]
-public class ParameterWrapperDrawer : PropertyDrawer {
+internal class ParameterWrapperDrawer : PropertyDrawer {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
         var parameterProp = property.FindPropertyRelative("parameter");
         var parameterNameProp = property.FindPropertyRelative("parameterName");

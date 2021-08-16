@@ -1,0 +1,130 @@
+.unity-label {
+    padding-top: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-bottom: 2px;
+    margin-left: 4px;
+    margin-top: 2px;
+    margin-right: 4px;
+    margin-bottom: 2px;
+}
+
+.blackboard {
+    position: absolute;
+    border-left-width: 1px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-radius: 5px;
+    flex-direction: column;
+    background-color: rgba(43, 43, 43, 0.75);
+    border-color: rgba(25, 25, 25, 50);
+    min-width: 100px;
+    min-height: 100px;
+    width: 200px;
+    height: 400px;
+    right: 20;
+    left: auto;
+}
+
+.blackboard.windowed {
+    position: absolute;
+    padding-top: 0;
+    flex: 1;
+    border-left-width: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-radius: 0;
+    width: initial;
+    height: initial;
+    right: 20;
+    left: auto;
+}
+
+.blackboard.windowed > .resizer {
+    display: none;
+}
+
+.blackboard:selected {
+    border-color: rgba(68, 192, 255,50);
+}
+
+.blackboard > .mainContainer {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.blackboard.scrollable > .mainContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.blackboard > .mainContainer > #content {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.blackboard.scrollable > .mainContainer > #content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column;
+    align-items: auto;
+}
+
+.blackboard > .mainContainer > #content > #contentContainer {
+    min-height: 50px;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 15px;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.blackboard > .mainContainer > #content > #header {
+    flex-direction: row;
+    align-items: stretch;
+    background-color: rgba(57, 57, 57, 0.75);
+    border-bottom-width: 1px;
+    border-color: rgb(33, 33, 33);
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    padding-left: 1px;
+    padding-top: 4px;
+    padding-bottom: 2px;
+}
+
+.blackboard.windowed > .mainContainer > #content > #header {
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+}
+
+.blackboard > .mainContainer > #content > #header > #labelContainer {
+    flex: 1 0 0;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.blackboard > .mainContainer > #content > #header > #labelContainer > #titleLabel {
+    font-size: 14px;
+    color: rgb(193, 193, 193);
+}
+
+.blackboard > .mainContainer > #content > #header > #labelContainer > #subTitleLabel {
+    font-size: 11px;
+    color: rgb(96, 96, 96);
+}
+
+.blackboardSection {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-top: 0;
+}

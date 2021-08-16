@@ -10,9 +10,6 @@ public class ParameterValue {
     public float FloatValue; 
     public bool BoolValue;
     public int IntValue;
-    public void SetFloat(float value) => FloatValue = value;
-    public void SetInt(int value) => IntValue = value;
-    public void SetBool(bool value) => BoolValue = value;
 }
 #if UNITY_EDITOR
 [CustomPropertyDrawer(typeof(ParameterValue))]
@@ -34,4 +31,5 @@ public class ParameterValueDrawer : PropertyDrawer {
         }
     }
 }
+
 #endif

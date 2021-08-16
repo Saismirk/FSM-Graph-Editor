@@ -3,12 +3,14 @@ using UnityEditor.Experimental.GraphView;
 using UnityEditor;
 #endif
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.UIElements;
 namespace FSM.Graph {
-    public class SubStateMachineNode : GraphNode {
-        public SubStateMachineController subStateMachine;
+    internal class SubStateMachineNode : GraphNode {
+        internal SubStateMachineController subStateMachine;
         StateMachineGraphView graphView;
-        public SubStateMachineNode (SubStateMachineController subStateMachine, StateMachineGraphView graphView) {
+        internal List<Port> subStatePorts =  new List<Port>();
+        internal SubStateMachineNode (SubStateMachineController subStateMachine, StateMachineGraphView graphView) {
             this.subStateMachine = subStateMachine;
             title = subStateMachine.name;
             viewDataKey = subStateMachine.guid;
@@ -17,8 +19,7 @@ namespace FSM.Graph {
             style.left = subStateMachine.position.x;
             style.top = subStateMachine.position.y;
 
-            capabilities |= Capabilities.Renamable;
-            capabilities |= Capabilities.Copiable;
+            capabilities |= Capabilities.Renamable | Capabilities.Copiable | Capabilities.Collapsible | Capabilities.Movable | Capabilities.Deletable | Capabilities.Snappable;
 
             var enterSubStateButton = new Button(() => {
                 this.graphView.ChangeController(subStateMachine);
@@ -27,20 +28,32 @@ namespace FSM.Graph {
                 text = "Enter Sub-State"
             };
             mainContainer.Add(enterSubStateButton);
-            CreateInputPort();
-            CreateOutputPort();
+            CreateInputPort("Entry");
+            for (var i = 0; i < subStateMachine.states.Count; i++) {
+                var s = subStateMachine.states[i];
+                if (s is EntryState || s is AnyState || s is UpState) continue;
+                CreateSubStatePort(s?.stateName);
+            }
         }
         public override void SetPosition(Rect newPos) {
             base.SetPosition(newPos);
             Undo.RecordObject(subStateMachine, "Node Change (Position)");
             subStateMachine.position.Set(newPos.xMin, newPos.yMin);
-            if (title != subStateMachine.name) title = subStateMachine.name;
             EditorUtility.SetDirty(subStateMachine);
+        }
+        protected void CreateSubStatePort(string portName = "Output", Port.Capacity capacity = Port.Capacity.Multi) {
+            var port = InstantiatePort(Orientation.Horizontal, Direction.Output, capacity, typeof(float));
+            port.portName = portName;
+            outputContainer.Add(port);
+            subStatePorts.Add(port);
+            RefreshPorts();
+            RefreshExpandedState(); 
         }
         public override void OnSelected() {
             base.OnSelected();
-            if (subStateMachine != null) Selection.activeObject = subStateMachine;
-            if (title != subStateMachine.name) title = subStateMachine.name;
+            if (subStateMachine != null) {
+                graphView?.SetInspectorDisplay(subStateMachine);
+            }
         }
     }   
 }

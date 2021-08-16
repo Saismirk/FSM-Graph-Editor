@@ -12,46 +12,66 @@ namespace FSM {
     [CreateAssetMenu()]
     public class State : ScriptableObject {
         public string stateName = "New State";
+        public bool LockedState {get; set;}
+        internal StateMachineControllerBase Owner { 
+            get => owner;
+            set {
+                owner = value;
+                AssetDatabase.SaveAssets();
+            }
+        }
         public string guid;
         public Vector2 position;
         public List<StateTransition> transitions = new List<StateTransition>();
         public List<StateBehaviour> stateBehaviours =  new List<StateBehaviour>();
+        public List<StateBehaviour> stateBehavioursInstance =  new List<StateBehaviour>();
         [SerializeField] StateMachineController stateMachine;
-        public void CheckTransitions() {
+        [SerializeField] StateMachineControllerBase owner;
+        public bool CheckTransitions() {
             foreach (var transition in transitions) {
                 if (transition.CheckTransition(out State state)) { 
-                    stateMachine.SetState(state);
-                    return;
+                    stateMachine.SetState(state is ExitState ? stateMachine.GetEntryState() : state);
+                    return true;
                 }
             }
+            return false;
         }
-        public void Init(StateMachineController stateMachine) {
+        public void Init(StateMachineController stateMachine, StateMachineControllerBase owner) {
             this.stateMachine = stateMachine;
+            Owner = owner;
+        }
+
+        internal void CloneBehaviours() {
+            stateBehavioursInstance =  new List<StateBehaviour>();
+            stateBehaviours.ForEach(b => {
+                stateBehavioursInstance.Add(Instantiate(b));
+            });
         }
 
         public virtual void OnStateEnter(StateMachineRuntime runtime) {
-            stateBehaviours.ForEach(behaviour => {
+            stateBehavioursInstance.ForEach(behaviour => {
                 behaviour?.OnEnter(runtime, stateMachine, this);
             });
         }
         public virtual void OnStateUpdate(StateMachineRuntime runtime) {
-            stateBehaviours.ForEach(behaviour => {
+            stateBehavioursInstance.ForEach(behaviour => {
                 behaviour?.OnUpdate(runtime, stateMachine, this);
             });
         }
         public virtual void OnStateExit(StateMachineRuntime runtime) {
-            stateBehaviours.ForEach(behaviour => {
+            stateBehavioursInstance.ForEach(behaviour => {
                 behaviour?.OnExit(runtime, stateMachine, this);
             });
         }
 
-        public void AddTransition(State state) {
+        public void AddTransition(State state, bool outward = false) {
             Undo.RecordObject(this, "Creation (Transition)");
             var transition = CreateInstance<StateTransition>();
             transition.hideFlags = HideFlags.HideInHierarchy;
             transition.name = $"Transition: {stateName} - {state.stateName}";
             transition.stateToTransition = state;
             transition.Init(stateMachine);
+            transition.outwardTransition = outward;
             transitions.Add(transition);
             AssetDatabase.AddObjectToAsset(transition, this);
             Undo.RegisterCreatedObjectUndo(transition, "Creation (Transition)");
@@ -150,9 +170,6 @@ namespace FSM {
             }
             public override void OnInspectorGUI() {
                 var transitionsProp = serializedObject.FindProperty("transitions");
-                var stateNameProp = serializedObject.FindProperty("stateName");
-                EditorGUILayout.PropertyField(stateNameProp);
-                serializedObject.ApplyModifiedProperties();
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(transitionsProp);
                 if (EditorGUI.EndChangeCheck()) {

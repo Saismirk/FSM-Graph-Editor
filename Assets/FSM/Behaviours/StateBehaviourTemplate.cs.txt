@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+
 namespace FSM {
     public class #SCRIPTNAME# : StateBehaviour {
 		/*Called when state has become active after a transition has been resolved*/

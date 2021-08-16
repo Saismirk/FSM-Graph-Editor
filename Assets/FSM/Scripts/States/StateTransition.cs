@@ -9,6 +9,8 @@ namespace FSM {
     [CreateAssetMenu(menuName = "StateMachine/Transition")]
     public class StateTransition : ScriptableObject {
         public State stateToTransition;
+        public bool outwardTransition;
+        public StateMachineControllerBase TargetStateMachine => stateToTransition.Owner;
         public List<Condition> conditions = new List<Condition>();
         [SerializeField] StateMachineController controller;
         public void Init(StateMachineController controller) {
@@ -40,7 +42,7 @@ namespace FSM {
                     EditorGUI.PropertyField(rect, parameter, GUIContent.none);
                 };
                 conditionsList.drawHeaderCallback = rect => {
-                    EditorGUI.LabelField(rect, "Parameters");
+                    EditorGUI.LabelField(rect, "Conditions");
                 };
                 conditionsList.onAddCallback = list => {
                     var index = list.serializedProperty.arraySize;
@@ -69,7 +71,7 @@ namespace FSM {
                 var serializedObject = new SerializedObject(property.objectReferenceValue as StateTransition);
                 var transitionProp = serializedObject.FindProperty("stateToTransition"); 
                 var labelRect = new Rect(position.x, position.y, position.width * 0.75f, EditorGUIUtility.singleLineHeight);
-                var buttonRect = new Rect(position.x + position.width * 0.75f + 10, position.y, position.width * 0.2f, EditorGUIUtility.singleLineHeight);
+                var buttonRect = new Rect(position.width - 45, position.y, 60, EditorGUIUtility.singleLineHeight);
                 EditorGUI.LabelField(labelRect, $"To '{(transitionProp?.objectReferenceValue as State)?.stateName}'");
                 if (serializedObject?.targetObject != null && GUI.Button(buttonRect, "Select")) {
                     Selection.activeObject = serializedObject.targetObject;

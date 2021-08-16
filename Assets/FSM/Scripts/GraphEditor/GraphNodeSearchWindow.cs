@@ -6,11 +6,11 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEditor.Experimental.GraphView;
 namespace FSM.Graph {
-    public class GraphNodeSearchWindow : ScriptableObject, ISearchWindowProvider {
+    internal class GraphNodeSearchWindow : ScriptableObject, ISearchWindowProvider {
         StateMachineGraphView graphView;
         EditorWindow window;
 
-        public void Init(StateMachineGraphView graphView, EditorWindow window = null) {
+        internal void Init(StateMachineGraphView graphView, EditorWindow window = null) {
             this.graphView = graphView;
             this.window = window;
         }
@@ -51,6 +51,7 @@ namespace FSM.Graph {
                     return true;
                 case SubStateMachineController sm:
                     graphView.CreateSubStateMachine(sm.GetType(), localMousePosition);
+                    (window as StateMachineGraphWindow)?.AddSubStatesToMenu();
                     return true;
                 default :
                     return false;

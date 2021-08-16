@@ -7,10 +7,11 @@ namespace FSM {
         [CustomEditor(typeof(ExitState))]
         public class ExitStateEditor : Editor {
             public override void OnInspectorGUI() {
-                EditorGUILayout.LabelField("Exit State", EditorStyles.boldLabel);
+                
             }
         }
         #endif
     }
+
 }
 

@@ -65,9 +65,9 @@ namespace FSM {
             }
             var indexProp = property.FindPropertyRelative("selectedParamenterIndex");
 
-            var parameterRect = new Rect(position.x, position.y, 150, EditorGUIUtility.singleLineHeight);
-            var typeRect = new Rect(position.x + 160, position.y, 100, EditorGUIUtility.singleLineHeight);
-            var valueRect = new Rect(position.x + 270, position.y, 100, EditorGUIUtility.singleLineHeight);
+            var parameterRect = new Rect(position.x, position.y, position.width * 0.5f, EditorGUIUtility.singleLineHeight);
+            var typeRect = new Rect(position.x + position.width * 0.5f, position.y, position.width * 0.25f, EditorGUIUtility.singleLineHeight);
+            var valueRect = new Rect(position.x + position.width * 0.75f, position.y, position.width * 0.25f, EditorGUIUtility.singleLineHeight);
             var listParameters =  GetStringArray(listParamNames);
             if (listParameters == null) return;
 
@@ -78,8 +78,7 @@ namespace FSM {
                 indexProp.intValue = index;
                 indexProp.serializedObject.ApplyModifiedProperties();
             }
-            var selectedParameter = listParams.GetArrayElementAtIndex(index).FindPropertyRelative("parameter")?.objectReferenceValue as Parameter;
-
+            var selectedParameter = listParams.GetArrayElementAtIndex(index % listParams.arraySize).FindPropertyRelative("parameter")?.objectReferenceValue as Parameter;
             if (selectedParameter != null) {
                 switch (selectedParameter) {
                     case BoolParameter b :
