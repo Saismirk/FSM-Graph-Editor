@@ -6,7 +6,7 @@
   "unity": "2020.3",
   "unityRelease": "1f1",
   "dependencies": {
-    "com.unity.shadergraph": "10.5.1",
+    
  },
  "keywords": [
     "FSM",
