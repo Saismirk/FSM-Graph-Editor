@@ -1,23 +1,23 @@
 {
-  "name": "com.saismirk.fsmgrapheditor",
-  "version": "1.2.3",
-  "displayName": "FSM Graph Editor",
-  "description": "Visual Finite State Machine for Unity.",
-  "unity": "2020.3",
-  "unityRelease": "1f1",
-  "dependencies": {
+	"name": "com.saismirk.fsmgrapheditor",
+	"version": "1.2.3",
+	"displayName": "FSM Graph Editor",
+	"description": "Visual Finite State Machine for Unity.",
+	"unity": "2020.3",
+	"unityRelease": "1f1",
+	"dependencies": {
     
- },
- "keywords": [
-    "FSM",
-    "Graph",
-    "Editor"
-  ],
-  "author": {
-    "name": "Saismirk",
-  }
-  "repository": {
-	"type": "git",
-    "url": "https://github.com/Saismirk/FSM-Graph-Editor.git",
-  },
+	},
+	"keywords": [
+		"FSM",
+		"Graph",
+		"Editor"
+	],
+	"author": {
+		"name": "Saismirk",
+	}
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Saismirk/FSM-Graph-Editor.git",
+	},
 }
