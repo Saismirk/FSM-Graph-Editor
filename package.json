@@ -8,16 +8,11 @@
 	"dependencies": {
     
 	},
-	"keywords": [
-		"FSM",
-		"Graph",
-		"Editor"
-	],
 	"author": {
-		"name": "Saismirk",
+		"name": "Saismirk"
 	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Saismirk/FSM-Graph-Editor.git",
-	},
+	}
 }
