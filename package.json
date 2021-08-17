@@ -1,6 +1,6 @@
 {
 	"name": "com.saismirk.fsmgrapheditor",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"displayName": "FSM Graph Editor",
 	"description": "Visual Finite State Machine for Unity.",
 	"unity": "2020.3",
