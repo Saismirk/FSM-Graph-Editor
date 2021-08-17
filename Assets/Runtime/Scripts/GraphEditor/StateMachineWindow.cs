@@ -16,6 +16,7 @@ namespace FSM.Graph {
         VisualElement mainContainer;
         VisualElement root;
         VisualElement subLayerContainer;
+        Label graphTitleLabel;
         ToolbarButton inspectorButton;
         ToolbarButton parameterButton;
         ToolbarMenu subStateMenu;
@@ -56,6 +57,8 @@ namespace FSM.Graph {
             root = uxml.Instantiate();
             mainContainer = root.Q("MainContainer");
             subLayerContainer = root.Q("SubLayerContainer");
+            graphTitleLabel = root.Q<Label>(name: "GraphTitle");
+            graphTitleLabel.text = controller.name;
             inspectorButton = root.Q<ToolbarButton>(name: "InspectorButton");
             inspectorButton.style.backgroundColor = Color.white * 0.5f;
             inspectorButton.clicked += () => {
@@ -128,6 +131,7 @@ namespace FSM.Graph {
                 if (runtime.controllerInstance != controller) {
                     var c = !Application.isPlaying ? runtime.controller : runtime.controllerInstance;
                     ReloadGraph(c);
+                    graphTitleLabel.text = c.name;
                 }
                 return;
             }
@@ -135,6 +139,7 @@ namespace FSM.Graph {
                 if (Selection.activeObject as StateMachineController != controller) {
                     var c = Selection.activeObject as StateMachineController;
                     ReloadGraph(c);
+                    graphTitleLabel.text = c.name;
                 }
                 return;
             }

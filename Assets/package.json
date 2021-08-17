@@ -1,0 +1,18 @@
+{
+    "name": "com.saismirk.fsmgrapheditor",
+    "displayName": "FSM Graph Editor",
+    "version": "0.1.1",
+    "unity": "2020.3",
+    "author": "Saismirk",
+    "description": "Visual Finite State Machine for Unity.",
+    "dependencies": {
+        "com.unity.shadergraph": "10.5.1",
+        "com.unity.ugui": "1.0.0",
+        "com.unity.modules.ui": "1.0.0",
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Saismirk/FSM-Graph-Editor.git",
+        "revision": "b3a110dea641f8f760d9847168c969605e23068f"
+    }
+}

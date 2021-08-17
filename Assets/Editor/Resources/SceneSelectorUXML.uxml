@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Label text="Scene Selector" display-tooltip-when-elided="true" style="-unity-text-align: upper-center; -unity-font-style: bold; font-size: 18px; padding-top: 5px; padding-bottom: 5px;" />
+    <ui:VisualElement name="Options" style="padding-left: 5px; padding-bottom: 5px;">
+        <ui:Label text="Options" display-tooltip-when-elided="true" style="-unity-font-style: bold;" />
+    </ui:VisualElement>
+    <ui:Toggle label="Load Additive" name="AdditiveToggle" tooltip="Loads the selected scene additively." binding-path="additive" value="false" style="padding-left: 10px;" />
+    <ui:VisualElement style="height: 100%; flex-shrink: 1; flex-direction: row;">
+        <ui:VisualElement style="flex-direction: column; width: 50%;">
+            <ui:Label text="Scenes on build" display-tooltip-when-elided="true" style="-unity-font-style: bold; padding-left: 5px;" />
+            <ui:ScrollView name="BuildScenes" show-vertical-scroller="false" style="height: auto; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px; margin-bottom: 5px; margin-top: 5px; margin-right: 5px; margin-left: 5px; background-color: rgb(72, 72, 72); border-top-left-radius: 5px; border-bottom-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; flex-shrink: 1; min-height: 50px; flex-grow: 0; max-height: 50%;" />
+        </ui:VisualElement>
+        <ui:VisualElement style="width: 50%;">
+            <ui:Label text="Scenes on project" display-tooltip-when-elided="true" style="-unity-font-style: bold; padding-left: 5px;" />
+            <ui:ScrollView name="ProjectScenes" style="height: auto; margin-left: 5px; margin-right: 5px; margin-top: 5px; margin-bottom: 5px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px; background-color: rgb(72, 72, 72); border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; min-height: 50px; max-height: none;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

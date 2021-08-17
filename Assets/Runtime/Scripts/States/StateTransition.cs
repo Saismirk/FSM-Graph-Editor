@@ -6,7 +6,6 @@ using UnityEditorInternal;
 #endif
 namespace FSM {
     [System.Serializable]
-    [CreateAssetMenu(menuName = "StateMachine/Transition")]
     public class StateTransition : ScriptableObject {
         public State stateToTransition;
         public bool outwardTransition;

@@ -17,7 +17,9 @@ MonoBehaviour:
   position: {x: 300, y: 0}
   transitions: []
   stateBehaviours: []
+  stateBehavioursInstance: []
   stateMachine: {fileID: 11400000}
+  owner: {fileID: 0}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33,11 +35,13 @@ MonoBehaviour:
   states:
   - {fileID: 964110158423975540}
   - {fileID: -6916853661974303788}
+  - {fileID: 8849224829147605719}
   subStates: []
   currentState: 
   previousState: 
   depth: 0
   parameters: []
+  properties: []
   listOfParameters: []
 --- !u!114 &964110158423975540
 MonoBehaviour:
@@ -56,4 +60,26 @@ MonoBehaviour:
   position: {x: 0, y: 0}
   transitions: []
   stateBehaviours: []
+  stateBehavioursInstance: []
   stateMachine: {fileID: 11400000}
+  owner: {fileID: 0}
+--- !u!114 &8849224829147605719
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 939242e9051e607498bc9034bdc8c68b, type: 3}
+  m_Name: AnyState
+  m_EditorClassIdentifier: 
+  stateName: AnyState
+  guid: 543f6550d35a4434cb4d366870b56e99
+  position: {x: 0, y: 300}
+  transitions: []
+  stateBehaviours: []
+  stateBehavioursInstance: []
+  stateMachine: {fileID: 11400000}
+  owner: {fileID: 11400000}

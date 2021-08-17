@@ -7,9 +7,9 @@ using UnityEditor;
 namespace FSM {
     public class FSMSettings : ScriptableObject {
         public const string settingsPath = "Assets/Editor/FSMEditor/FSMSettings.asset";
-        [SerializeField] public readonly string PathToScripts = "Assets/Scripts/FSM/Scripts/";
-        [SerializeField] public readonly string PathToTemplate = "Assets/Scripts/FSM/Behaviours/StateBehaviourTemplate.cs.txt";
-        [SerializeField] public readonly string PathToBehaviours = "Assets/Scripts/FSM/Behaviours/";
+        [SerializeField] public string PathToScripts = "Assets/Scripts/FSM/Scripts/";
+        [SerializeField] public string PathToTemplate = "Assets/Scripts/FSM/Behaviours/StateBehaviourTemplate.cs.txt";
+        [SerializeField] public string PathToBehaviours = "Assets/Scripts/FSM/Behaviours/";
         
         internal static FSMSettings GetOrCreateSettings() {
             var settings = AssetDatabase.LoadAssetAtPath<FSMSettings>(settingsPath);
@@ -29,14 +29,22 @@ namespace FSM {
             var provider = new SettingsProvider("Project/FSM Settings", SettingsScope.Project) {
                 label = "FSM Settings",
                 guiHandler = (searchContext) => {
+                    GUILayout.Space(10);
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.LabelField("Path Settings", EditorStyles.boldLabel);
                     var settings = FSMSettings.GetSerializedSettings();
+                    if (settings == null) return;
+                    EditorGUI.BeginChangeCheck();
                     EditorGUILayout.PropertyField(settings.FindProperty("PathToScripts"), new GUIContent("Path To Script Folder"));
                     EditorGUILayout.PropertyField(settings.FindProperty("PathToTemplate"), new GUIContent("Path To Template File"));
                     EditorGUILayout.PropertyField(settings.FindProperty("PathToBehaviours"), new GUIContent("Path To Behaviours Folder"));
+                    if (EditorGUI.EndChangeCheck()) {
+                        settings.ApplyModifiedProperties();
+                    }
+                    EditorGUI.indentLevel--;
                 },
                 keywords = new HashSet<string>(new[] { "Template File", "Behaviours Folder" })
             };
-
             return provider;
         }
     }
