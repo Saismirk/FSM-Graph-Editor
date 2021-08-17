@@ -6,11 +6,11 @@
 	"unity": "2020.3",
 	"unityRelease": "1f1",
 	"dependencies": {
-    
+		"com.unity.shadergraph": "10.5.1"
 	},
 	"author": {
 		"name": "Saismirk"
-	},
+	}
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Saismirk/FSM-Graph-Editor.git"
