@@ -361,7 +361,6 @@ namespace FSM.Graph {
             graphViewChanged -= OnGraphViewChanged;
             DeleteElements(graphElements.ToList());
             graphViewChanged += OnGraphViewChanged;
-            //ReAssignOwners();
             TransitionMap =  new Dictionary<Edge, (State parent, State child)>();
             controller?.states?.ForEach(node => AddElement(new StateMachineNode(node, this)));
             controller?.subStates?.ForEach(node => AddElement(new SubStateMachineNode(node, this)));
@@ -384,7 +383,7 @@ namespace FSM.Graph {
                         var childView = GetTargetNodeFromTransition(transition);
                         Edge edge = null;
                         parentView?.subStatePorts.ForEach(p => {
-                            if (p.portName == s.stateName) {
+                            if (p.portName == s.stateName && childView != parentView) {
                                 edge = childView != null ? p.ConnectTo(childView.input) : null;
                             }
                         });
@@ -407,7 +406,6 @@ namespace FSM.Graph {
 
         void AddTransitionEdge(Edge edge, (State parent, State child) states) {
             if (edge == null) {
-                //Debug.Log($"Null edge for {states.parent?.Owner?.name}:{states.parent?.name} | {states.child?.Owner?.name}:{states.child?.name} transition");
                 return;
             }
             if (edge.output.node == edge.input.node) return;
