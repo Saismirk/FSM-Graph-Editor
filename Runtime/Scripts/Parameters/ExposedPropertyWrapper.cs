@@ -8,6 +8,16 @@ namespace FSM {
     public class ExposedPropertyWrapper {
         public ExposedProperty property;
         public string propertyName;
+        public int propertyID;
+        public ExposedPropertyWrapper Clone() {
+        var prop = new ExposedPropertyWrapper();
+        prop.propertyName = propertyName;
+        prop.property = ScriptableObject.Instantiate(property);
+        prop.property.value = property.value;
+        prop.property.name = property.name;
+        prop.propertyID = property.name.GetHashCode();
+        return prop;
+    }
     }
     #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(ExposedPropertyWrapper))]

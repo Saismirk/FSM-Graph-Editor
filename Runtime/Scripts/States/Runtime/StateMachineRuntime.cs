@@ -109,7 +109,7 @@ namespace FSM {
                 return;
             }
             if (param.value.BoolValue != value) {
-                Debug.Log($"{param.name} Bool parameter changed to {value}");
+                //Debug.Log($"{param.name} Bool parameter changed to {value}");
                 param.value.BoolValue = value;
                 if (selected) OnParameterChanged?.Invoke(param.name);
             }
@@ -117,10 +117,10 @@ namespace FSM {
         internal void SetTransformProperty(string property, Transform value) {
             var val = new TransformData(value);
             var prop = controllerInstance != null 
-                ? controllerInstance.GetProperty<TransformProperty>(property.GetHashCode())
-                : controller.GetProperty<TransformProperty>(property.GetHashCode());
+                ? controllerInstance.GetProperty(property.GetHashCode())
+                : controller.GetProperty(property.GetHashCode());
             if (prop == null) {
-                Debug.Log($"Parameter name '{prop.GetHashCode()}' was not found");
+                Debug.Log($"Parameter name '{property}:{property.GetHashCode()}' was not found");
                 return;
             }
             if (prop.value.TransformValue != val) {
@@ -133,15 +133,17 @@ namespace FSM {
         public float GetFloat(int parameter) => controllerInstance.GetParameter<FloatParameter>(parameter).value.FloatValue;
         public int GetInt(int parameter) => controllerInstance.GetParameter<IntParameter>(parameter).value.IntValue;
         public bool GetBool(int parameter) => controllerInstance.GetParameter<BoolParameter>(parameter).value.BoolValue;
-        public T GetProperty<T>(string propertyName) => controllerInstance.GetProperty<T>(propertyName.GetHashCode());
+        public T GetPropertyValue<T>(string propertyName) => controllerInstance.GetPropertyValue<T>(propertyName.GetHashCode());
         public bool TryGetProperty<T> (string propertyName, out T property) => controllerInstance.TryGetProperty(
             propertyName.GetHashCode(),
             out property);
 
-        public bool HasTransform(int property) => controller.GetProperty<TransformData>(property) != null;
-#endregion
+        public bool HasTransform(int property) => controllerInstance != null
+            ? controllerInstance.GetProperty(property) != null
+            : controller.GetProperty(property) != null;
+        #endregion
 
-#region MonoBehaviour Methods
+        #region MonoBehaviour Methods
         private void Start() {
             if (controller == null) return;
             controllerInstance = controller.Clone(this); 
@@ -150,6 +152,7 @@ namespace FSM {
                 var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
                 if (window.controller == controller) {
                     StateMachineGraphWindow.OpenGraphWindow(controllerInstance);
+                    //Debug.Log("Opening instanced controller");
                     selected = true;
                 }
             }          

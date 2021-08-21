@@ -59,7 +59,7 @@ namespace FSM.Graph {
             mainContainer = root.Q("MainContainer");
             subLayerContainer = root.Q("SubLayerContainer");
             graphTitleLabel = root.Q<Label>(name: "GraphTitle");
-            //graphTitleLabel.text = controller != null ? controller.name : "No Controller";
+            graphTitleLabel.text = controller != null ? controller.name : "FSM Controller";
             inspectorButton = root.Q<ToolbarButton>(name: "InspectorButton");
             inspectorButton.style.backgroundColor = Color.white * 0.5f;
             inspectorButton.clicked += () => {
@@ -111,6 +111,7 @@ namespace FSM.Graph {
                 ReloadGraph(controller);
                 return;
             }
+            graphView?.SetNodeHighlight();
             graphView?.UpdateGraphElementPositions();
             if (CanvasHasResized) graphView?.FitGraphElementsInCanvas(position);
             if (graphView?.selection.Count > 0) {

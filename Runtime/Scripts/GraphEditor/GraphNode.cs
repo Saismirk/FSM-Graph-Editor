@@ -5,6 +5,7 @@ namespace FSM.Graph {
     public abstract class GraphNode : Node {
         public string guid;
         public Port input, output;
+        public bool highlighted;
         protected void CreateInputPort(string portName = "Input", Port.Capacity capacity = Port.Capacity.Multi) {
             input = InstantiatePort(Orientation.Horizontal, Direction.Input, capacity, typeof(float));
             input.portName = portName;

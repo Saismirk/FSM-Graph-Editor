@@ -6,10 +6,10 @@ using UnityEditor;
 
 namespace FSM {
     public class FSMSettings : ScriptableObject {
-        public const string settingsPath = "Assets/Editor/FSMEditor/FSMSettings.asset";
-        [SerializeField] public string PathToScripts = "Assets/Scripts/FSM/Scripts/";
-        [SerializeField] public string PathToTemplate = "Assets/Scripts/FSM/Behaviours/StateBehaviourTemplate.cs.txt";
-        [SerializeField] public string PathToBehaviours = "Assets/Scripts/FSM/Behaviours/";
+        public const string settingsPath = "Assets/FSMGraphEditor/Editor/FSMEditor/FSMSettings.asset";
+        [SerializeField] public string PathToScripts = "Assets/FSMGraphEditor/Scripts/FSM/Scripts/";
+        [SerializeField] public string PathToTemplate = "Assets/FSMGraphEditor/Scripts/FSM/Behaviours/StateBehaviourTemplate.cs.txt";
+        [SerializeField] public string PathToBehaviours = "Assets/FSMGraphEditor/Scripts/FSM/Behaviours/";
         
         internal static FSMSettings GetOrCreateSettings() {
             var settings = AssetDatabase.LoadAssetAtPath<FSMSettings>(settingsPath);

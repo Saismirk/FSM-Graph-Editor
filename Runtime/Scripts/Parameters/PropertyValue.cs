@@ -8,10 +8,10 @@ namespace FSM {
     [Serializable]
     public struct TransformData : IEquatable<TransformData> {
         public Vector3 position, scale, rotation;
-        public TransformData(Transform transform) {
-            position = transform.position;
-            scale = transform.localScale;
-            rotation = transform.eulerAngles;
+        public TransformData(Transform transform = null) {
+            position = transform == null ? default : transform.position;
+            scale = transform == null ? default : transform.localScale;
+            rotation = transform == null ? default : transform.eulerAngles;
         }
         public bool Equals(TransformData other) {
             return position == other.position && scale == other.scale && rotation == other.rotation;
@@ -37,7 +37,7 @@ namespace FSM {
     public class PropertyValue {
         public enum PropertyType { Transform, Vector4, Vector3, Vector2, Float, Bool, Color, GameObject }
         public PropertyType type;
-        public TransformData TransformValue;
+        public TransformData TransformValue = new TransformData();
         public Vector4 Vector4Value;
         public Vector3 Vector3Value;
         public Vector2 Vector2Value;

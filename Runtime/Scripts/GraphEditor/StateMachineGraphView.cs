@@ -28,6 +28,7 @@ namespace FSM.Graph {
         private InspectorPanel inspectorPanel;
         Vector4 inspectorBorders, blackboardBorders;
         Vector2 blackboardPosition;
+        private string currentSelectedGuid;
         const string pathToSettings = "Assets/Editor/FSMEditor/FSMSettings.asset";
         internal Dictionary<Edge, (State, State)> TransitionMap {get; private set;}
 
@@ -52,7 +53,6 @@ namespace FSM.Graph {
             this.window = window;
             AddSearchWindow();
 
-            StateMachineController.OnStateUpdated += SetNodeHighlight;
             Undo.undoRedoPerformed += () => {
                 PopulateGraph();
                 AssetDatabase.SaveAssets();
@@ -413,7 +413,6 @@ namespace FSM.Graph {
             Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(pathToScript);
         }
         void OnDisable() {
-            StateMachineController.OnStateUpdated -= SetNodeHighlight;
             StateMachineRuntime.OnParameterChanged -= ParameterChangeHandler;
         }
         void AddSearchWindow() {
@@ -558,18 +557,37 @@ namespace FSM.Graph {
                 w = window.yMin
             };
         }
-        internal void SetNodeHighlight(State state, bool set = false) {
-            var node = state != null ? GetNodeByGuid(state.guid) : null;
+        internal void SetNodeHighlight() {
+            if (main?.CurrentState == null) return;
+            var previousNode = GetNodeByGuid(currentSelectedGuid) as GraphNode;
+            var node = GetNodeByGuid(main.CurrentState.guid) as GraphNode;
             if (node == null) {
-                node = GetNodeByGuid(lastKnownGuid);
-                if (node == null) return;
+                var subStateGuid = main.CurrentState.Owner.GetEntryState().guid;
+                node = GetNodeByGuid(subStateGuid) as GraphNode;
+                if (node == null) {
+                    if (previousNode != null && previousNode.highlighted) {
+                        previousNode.highlighted = false;
+                        previousNode.style.backgroundColor = Color.clear;
+                    }
+                    return;
+                }
             }
-            else if (set) lastKnownGuid = state.guid;
+            if (previousNode == null && main.PreviousState != null) {
+                var subStateGuid = main.PreviousState.Owner.GetEntryState().guid;
+                previousNode = GetNodeByGuid(subStateGuid) as GraphNode;
+            }
+            if (previousNode != null && previousNode.highlighted) {
+                previousNode.highlighted = false;
+                previousNode.style.backgroundColor = Color.clear;
+            }
+            if (node.highlighted) return;
+            currentSelectedGuid = main.CurrentState.guid;
             node.style.borderBottomLeftRadius = 8;
             node.style.borderBottomRightRadius = 8;
             node.style.borderTopLeftRadius = 8;
             node.style.borderTopRightRadius = 8;
-            node.style.backgroundColor = set ? new Color(0.75f, 0.75f, 1, 0.8f) : Color.clear;
+            node.style.backgroundColor = new Color(0.75f, 0.75f, 1, 0.8f);
+            node.highlighted = true;
         }
         GraphViewChange OnGraphViewChanged (GraphViewChange change) {
             if (change.elementsToRemove != null) {

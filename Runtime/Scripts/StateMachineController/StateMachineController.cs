@@ -60,10 +60,19 @@ namespace FSM {
             parameters.ForEach(parameter => {
                 controller.parameters.Add(parameter.Clone());
             });
+            properties.ForEach(property => {
+                controller.properties.Add(property.Clone());
+            });
             controller.parameterHashSet = new Dictionary<int, int>();
+            controller.propertyHashSet = new Dictionary<int, int>();
             int i = 0;
             parameters.ForEach(p => {
                 controller.parameterHashSet.Add(p.parameterID, i);
+                i++;
+            });
+            i = 0;
+            properties.ForEach(p => {
+                controller.propertyHashSet.Add(p.propertyID, i);
                 i++;
             });
             InitalizeControllers(controller);
@@ -75,6 +84,7 @@ namespace FSM {
         public void Init(StateMachineRuntime stateMachine) {
             runtime = stateMachine;
             parameters = new List<ParameterWrapper>();
+            properties = new List<ExposedPropertyWrapper>();
         }
 
         public void OnEnable() {
@@ -159,7 +169,7 @@ namespace FSM {
             if (!Application.isPlaying) {
                 index = properties.FindIndex(p => p.property.name.GetHashCode() == propertyHash);
             }
-            //Debug.Log($"Getting property {propertyHash} with index {index}: {(index >= 0 ? properties[index].property : null)}");
+            //Debug.Log($"Getting property {propertyHash} with index {index}: {(index >= 0 ? properties[index].property : null)} | Found: {properties[index].property != null} : {name}", this);
             return index >= 0 ? properties[index].property : null;
         }
         public bool TryGetProperty<T> (int propertyHash, out T property){
@@ -180,7 +190,7 @@ namespace FSM {
             property = (T)obj;
             return true;
         }
-        public T GetProperty<T> (int propertyHash){
+        public T GetPropertyValue<T> (int propertyHash){
             T property = default;
             var exposedProperty = GetProperty(propertyHash);
             if (exposedProperty == null) return default;
@@ -195,6 +205,7 @@ namespace FSM {
                 GameObject go => exposedProperty.value.GameObjectValue,
                 _ => default
             };
+            //Debug.Log($"Property found {exposedProperty.name}: {(T)obj} | {obj?.GetType().Name} | {property.GetType().Name}");
             return (T)obj;
         }
         public void AddData(ScriptableObject data) {
