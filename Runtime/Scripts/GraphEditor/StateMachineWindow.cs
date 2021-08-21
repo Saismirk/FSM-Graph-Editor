@@ -38,6 +38,7 @@ namespace FSM.Graph {
         }
         public static event System.Action<StateMachineController> OnControllerSelected;
         public static void OpenGraphWindow(StateMachineController controller) {
+            if (controller == null) return;
             var window = GetWindow<StateMachineGraphWindow>();
             window.controller = controller;
             window.titleContent = new GUIContent("State Machine Editor");
@@ -58,7 +59,7 @@ namespace FSM.Graph {
             mainContainer = root.Q("MainContainer");
             subLayerContainer = root.Q("SubLayerContainer");
             graphTitleLabel = root.Q<Label>(name: "GraphTitle");
-            graphTitleLabel.text = controller.name;
+            //graphTitleLabel.text = controller != null ? controller.name : "No Controller";
             inspectorButton = root.Q<ToolbarButton>(name: "InspectorButton");
             inspectorButton.style.backgroundColor = Color.white * 0.5f;
             inspectorButton.clicked += () => {

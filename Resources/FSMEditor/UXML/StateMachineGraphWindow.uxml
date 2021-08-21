@@ -13,4 +13,5 @@
         </ui:VisualElement>
     </uie:Toolbar>
     <ui:VisualElement name="MainContainer" style="height: 100%; width: 100%;" />
+    <ui:Label text="FSM Controller" display-tooltip-when-elided="true" name="GraphTitle" style="position: absolute; top: 34px; left: 15px; height: auto; -unity-font-style: bold; font-size: 22px; right: 34px; flex-wrap: nowrap; white-space: nowrap; overflow: hidden;" />
 </ui:UXML>
