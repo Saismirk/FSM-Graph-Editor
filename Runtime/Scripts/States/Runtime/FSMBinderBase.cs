@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 namespace FSM {
-    [ExecuteInEditMode, RequireComponent(typeof(StateMachineRuntime))]
+    [ExecuteInEditMode]
     public abstract class FSMBinderBase : MonoBehaviour {
         protected StateMachineRuntime binder;
         public bool Initialized {get; private set;}
