@@ -98,7 +98,7 @@ namespace FSM.Graph {
             if (newController == null) return;
             controller = newController;
             
-            graphView.Init(controller.parameters, controller.properties);
+            graphView.Init(controller.parameters, controller.properties, controller.globalBehaviours);
             OnControllerSelected?.Invoke(controller);
             serializedObject = new SerializedObject(controller);
             graphView?.ChangeController(controller);
@@ -150,7 +150,7 @@ namespace FSM.Graph {
             graphView.controller = controller;
             graphView.main = controller;
             graphView.StretchToParentSize();
-            graphView.Init(controller.parameters, controller.properties);
+            graphView.Init(controller.parameters, controller.properties, controller.globalBehaviours);
             mainContainer.Add(graphView);
             graphView.PopulateGraph();
         }

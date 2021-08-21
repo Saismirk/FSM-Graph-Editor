@@ -6,9 +6,11 @@ using UnityEditor;
 #endif
 namespace FSM {
     public abstract class StateMachineControllerBase : ScriptableObject {
-        public List<State> states = new List<State>();
-        public List<SubStateMachineController> subStates = new List<SubStateMachineController>();
-        public string currentState, previousState;
+        [SerializeField] internal List<State> states = new List<State>();
+        [SerializeField] internal List<SubStateMachineController> subStates = new List<SubStateMachineController>();
+        [SerializeField] internal List<StateBehaviour> globalBehaviours = new List<StateBehaviour>();
+        [SerializeField] internal List<StateBehaviour> globalBehaviourInstances = new List<StateBehaviour>();
+        [SerializeField] protected string currentState, previousState;
         public int depth = 0;
         public State CreateState(System.Type type, Vector2 position = default, bool undo = true) {
             if (undo) Undo.RecordObject(this, "Creation (State)");
@@ -39,6 +41,10 @@ namespace FSM {
             });
             subStates.ForEach(s => {
                 s.CloneStateBehaviours();
+            });
+            globalBehaviourInstances =  new List<StateBehaviour>();
+            globalBehaviours.ForEach(b => {
+                globalBehaviourInstances.Add(Instantiate(b));
             });
         }
         internal abstract string GetPath(bool noSelf);

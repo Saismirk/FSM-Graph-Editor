@@ -90,7 +90,7 @@ namespace FSM {
                 CreateState(typeof(AnyState), new Vector2(0, 300), false);
             }
         }
-        public void UpdateCurrentState(StateMachineRuntime stateMachine, bool updateCallback) {
+        internal void UpdateCurrentState(StateMachineRuntime stateMachine, bool updateCallback) {
             CurrentState?.OnStateUpdate(stateMachine);
             if (updateCallback) OnStateUpdated?.Invoke(CurrentState, true);
             if (CurrentState.LockedState) return;
@@ -102,9 +102,30 @@ namespace FSM {
             var subState = CurrentState.Owner as SubStateMachineController;
             subState?.exitState.CheckTransitions();
         }
-
-
-
+        internal void OnFSMControllerColliderHit(ControllerColliderHit hit, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMControllerColliderHit(hit, stateMachine);
+        }
+        internal void OnFSMCollisionEnter(Collision collision, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMCollisionEnter(collision, stateMachine);
+        }
+        internal void OnFSMCollisionExit(Collision collision, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMCollisionExit(collision, stateMachine);
+        }
+        internal void OnFSMCollisionStay(Collision collision, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMCollisionStay(collision, stateMachine);
+        }
+        internal void OnFSMTriggerEnter(Collider collider, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMTriggerEnter(collider, stateMachine);
+        }
+        internal void OnFSMTriggerExit(Collider collider, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMTriggerExit(collider, stateMachine);
+        }
+        internal void OnFSMTriggerStay(Collider collider, StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMTriggerStay(collider, stateMachine);
+        }
+        internal void OnFSMAnimatorMove(StateMachineRuntime stateMachine) {
+            CurrentState?.OnFSMAnimatorMove(stateMachine);
+        }
         
         public void SetFloat(int parameter, float value) => GetParameter<FloatParameter>(parameter).value.FloatValue = value;
         public void SetInt(int parameter, int value) => GetParameter<IntParameter>(parameter).value.IntValue = value;
@@ -132,7 +153,7 @@ namespace FSM {
             parameterHashSet.TryGetValue(parameterHash, out index);
             return index >= 0 ? parameters[index].parameter : null;
         }
-        public ExposedProperty GetProperty<T>(int propertyHash) where T : ExposedProperty {
+        public ExposedProperty GetProperty(int propertyHash){
             var index = -1;
             if (propertyHashSet.Count > 0) propertyHashSet.TryGetValue(propertyHash, out index);
             if (!Application.isPlaying) {
@@ -141,19 +162,48 @@ namespace FSM {
             //Debug.Log($"Getting property {propertyHash} with index {index}: {(index >= 0 ? properties[index].property : null)}");
             return index >= 0 ? properties[index].property : null;
         }
-        public void AddParameter(Parameter param) {
-            Undo.RecordObject(this, "Creation (Parameter)");
-            param.hideFlags = HideFlags.HideInHierarchy;
-            AssetDatabase.AddObjectToAsset(param, this);
-            Undo.RegisterCreatedObjectUndo(param, "Creation (Parameter)");
-            GenerateListOfParameters();
+        public bool TryGetProperty<T> (int propertyHash, out T property){
+            property = default;
+            var exposedProperty = GetProperty(propertyHash);
+            if (exposedProperty == null) return false;
+            object obj = property switch {
+                float f => exposedProperty.value.FloatValue,
+                TransformData t => exposedProperty.value.TransformValue,
+                bool b => exposedProperty.value.BoolValue,
+                Vector2 v => exposedProperty.value.Vector2Value,
+                Vector3 v => exposedProperty.value.Vector3Value,
+                Vector4 v => exposedProperty.value.Vector4Value,
+                Color c => exposedProperty.value.ColorValue,
+                GameObject go => exposedProperty.value.GameObjectValue,
+                _ => default
+            };
+            property = (T)obj;
+            return true;
         }
-        public void AddProperty(ExposedProperty prop) {
-            Undo.RecordObject(this, "Creation (Property)");
-            prop.hideFlags = HideFlags.HideInHierarchy;
-            AssetDatabase.AddObjectToAsset(prop, this);
-            Undo.RegisterCreatedObjectUndo(prop, "Creation (Property)");
+        public T GetProperty<T> (int propertyHash){
+            T property = default;
+            var exposedProperty = GetProperty(propertyHash);
+            if (exposedProperty == null) return default;
+            object obj = property switch {
+                float f => exposedProperty.value.FloatValue,
+                TransformData t => exposedProperty.value.TransformValue,
+                bool b => exposedProperty.value.BoolValue,
+                Vector2 v => exposedProperty.value.Vector2Value,
+                Vector3 v => exposedProperty.value.Vector3Value,
+                Vector4 v => exposedProperty.value.Vector4Value,
+                Color c => exposedProperty.value.ColorValue,
+                GameObject go => exposedProperty.value.GameObjectValue,
+                _ => default
+            };
+            return (T)obj;
         }
+        public void AddData(ScriptableObject data) {
+            Undo.RecordObject(this, $"Creation ({data.GetType().Name})");
+            data.hideFlags = HideFlags.HideInHierarchy;
+            AssetDatabase.AddObjectToAsset(data, this);
+            Undo.RegisterCreatedObjectUndo(data, $"Creation ({data.GetType().Name})");
+        }
+
         public void RemoveParameter(Parameter param) {
             Undo.RecordObject(this, "Deletion (Parameter)");
             Undo.DestroyObjectImmediate(param);
@@ -183,8 +233,9 @@ namespace FSM {
             return true;
         }
 
-    #region Editor
-    #if UNITY_EDITOR
+
+#region Editor
+#if UNITY_EDITOR
         [CustomEditor(typeof(StateMachineController))]
         public class StateMachineControllerEditor : Editor {
             StateMachineController Controller => target as StateMachineController;
@@ -194,7 +245,7 @@ namespace FSM {
                 }
             }
         }
-        #endif
-    #endregion
+#endif
+#endregion
     }
 }

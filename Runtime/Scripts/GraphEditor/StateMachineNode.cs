@@ -34,7 +34,6 @@ namespace FSM.Graph {
                     capabilities |= Capabilities.Renamable | Capabilities.Copiable;
                     CreateInputPort();
                     CreateOutputPort();
-
                     break;
             }
         }

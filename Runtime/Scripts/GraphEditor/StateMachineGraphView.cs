@@ -7,7 +7,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEditor.Experimental.GraphView;
-using FSM;
 #endif
 namespace FSM.Graph {
     internal class StateMachineGraphView : GraphView {
@@ -15,18 +14,21 @@ namespace FSM.Graph {
         internal StateMachineController main;
         internal List<ParameterWrapper> parameters =  new List<ParameterWrapper>();
         internal List<ExposedPropertyWrapper> properties =  new List<ExposedPropertyWrapper>();
+        internal List<StateBehaviour> behaviours =  new List<StateBehaviour>();
         List<VisualElement> parameterElements = new List<VisualElement>();
         List<VisualElement> propertyElements = new List<VisualElement>();
+        List<VisualElement> behaviourElements = new List<VisualElement>();
         internal StateMachineGraphWindow window;
         GraphNodeSearchWindow searchWindow;
         List<string> nodeCopyCache;
         string lastKnownGuid;
         private Blackboard blackboard;
-        private BlackboardSection parameterSection, propertiesSection;
+        private BlackboardSection parameterSection, propertiesSection, behavioursSection;
         VisualElement eventTarget;
         private InspectorPanel inspectorPanel;
         Vector4 inspectorBorders, blackboardBorders;
         Vector2 blackboardPosition;
+        const string pathToSettings = "Assets/Editor/FSMEditor/FSMSettings.asset";
         internal Dictionary<Edge, (State, State)> TransitionMap {get; private set;}
 
         bool BlackboardPositionChanged {
@@ -80,9 +82,10 @@ namespace FSM.Graph {
             };
             StateMachineRuntime.OnParameterChanged += ParameterChangeHandler;
         }
-        internal void Init(List<ParameterWrapper> wrappers, List<ExposedPropertyWrapper> propertyWrappers) {
+        internal void Init(List<ParameterWrapper> wrappers, List<ExposedPropertyWrapper> propertyWrappers, List<StateBehaviour> behaviourList) {
             parameters = wrappers;
             properties = propertyWrappers;
+            behaviours = behaviourList;
             GenerateBlackboard();
             GenerateInspectorView();
         }
@@ -115,7 +118,7 @@ namespace FSM.Graph {
             inspectorPanel.DisplayInspector(obj);
         }
         void GenerateBlackboard() {
-            var rect = new Rect(20, 30, 250, 400);
+            var rect = new Rect(20, 100, 300, 400);
             if (blackboard != null) {
                 rect = blackboard.GetPosition();
                 Remove(blackboard);
@@ -153,8 +156,16 @@ namespace FSM.Graph {
                 menu.AddItem(new GUIContent("Parameters/Int"), false, ParameterCreationHandler<IntParameter>, new ParameterWrapper());
                 menu.AddItem(new GUIContent("Parameters/Bool"), false, ParameterCreationHandler<BoolParameter>, new ParameterWrapper());
                 menu.AddSeparator("");
+                menu.AddItem(new GUIContent("Properties/Float"), false, PropertyCreationHandler<FloatProperty>, new ExposedPropertyWrapper());
+                menu.AddItem(new GUIContent("Properties/Bool"), false, PropertyCreationHandler<BoolProperty>, new ExposedPropertyWrapper());
                 menu.AddItem(new GUIContent("Properties/Transform"), false, PropertyCreationHandler<TransformProperty>, new ExposedPropertyWrapper());
-                
+                menu.AddSeparator("");
+                var behaviourPaths = TypeCache.GetTypesDerivedFrom<StateBehaviour>().ToList();
+                behaviourPaths.ForEach(t => {
+                    menu.AddItem(new GUIContent("Behaviours/" + t.Name), false, BehaviourCreationHandler, t);
+                });
+                menu.AddSeparator("Behaviours/");
+                menu.AddItem(new GUIContent("Behaviours/Create New Behaviour"), false, CreateBehaviourHandler, null);
                 menu.ShowAsContext();
             };
             blackboard.editTextRequested = (blackboard, element, newName) => {
@@ -191,7 +202,6 @@ namespace FSM.Graph {
                         properties[propIndex].property.name = newName;
                         ((BlackboardField)element).text = newName;
                         break;
-
                 }
                 
                 AssetDatabase.SaveAssets();
@@ -199,12 +209,21 @@ namespace FSM.Graph {
             propertiesSection = new BlackboardSection(){
                 title = "Properties"
             };
-            int j = 0;
+            i = 0;
             properties.ForEach(prop => {
-                AddPropertyToBlackboard(prop, j);
-                j++;
+                AddPropertyToBlackboard(prop, i);
+                i++;
             });
             blackboard.Add(propertiesSection);
+            behavioursSection = new BlackboardSection(){
+                title = "Global Behaviours"
+            };
+            i = 0;
+            behaviours.ForEach(b => {
+                AddBehaviourToBlackboard(b, i);
+                i++;
+            });
+            blackboard.Add(behavioursSection);
             Add(blackboard);
         }
         internal void ToggleBlackboard() {
@@ -228,11 +247,15 @@ namespace FSM.Graph {
                     AssetDatabase.RemoveObjectFromAsset(properties[data.index].property);
                     properties.RemoveAt(data.index);
                     break;
+                case BlackboardFieldPropertyData.FieldType.Behaviour:
+                    AssetDatabase.RemoveObjectFromAsset(behaviours[data.index]);
+                    behaviours.RemoveAt(data.index);
+                    break;
             }           
             AssetDatabase.SaveAssets(); 
         }
         class BlackboardFieldPropertyData {
-            internal enum FieldType {Parameter, Property};
+            internal enum FieldType {Parameter, Property, Behaviour};
             internal FieldType type;
             internal int index;
 
@@ -274,19 +297,69 @@ namespace FSM.Graph {
                     parameterSection.Add(new BlackboardRow(blackboardField, intValue));
                     break;
             }
-            parameterSection.name = param.parameterName;
+            //parameterSection.name = param.parameterName;
         }
         void AddPropertyToBlackboard(ExposedPropertyWrapper prop, int index = 0){
             var blackboardField = new BlackboardField(){
                 text = prop.propertyName,
-                typeText = ObjectNames.NicifyVariableName(prop.property.GetType().ToString()),
+                typeText = ObjectNames.NicifyVariableName(prop.property.GetType().Name),
             };
             blackboardField.userData = blackboardField.userData = new BlackboardFieldPropertyData(){
                 type = BlackboardFieldPropertyData.FieldType.Property,
                 index =  index
             };
             propertiesSection.Add(blackboardField);
+            switch (prop.property) {
+                case BoolProperty p:
+                    var boolValue = new Toggle(){value = prop.property.value.BoolValue, label = "Value: "};
+                    boolValue.RegisterValueChangedCallback(evt => {
+                        prop.property.value.BoolValue = evt.newValue;
+                    });
+                    propertyElements.Add(boolValue);
+                    parameterSection.Add(new BlackboardRow(blackboardField, boolValue));
+                    break;
+                case FloatProperty p:
+                    var floatValue = new FloatField(){value = prop.property.value.FloatValue, label = "Value: "};
+                    floatValue.RegisterValueChangedCallback(evt2 => {
+                        prop.property.value.FloatValue = evt2.newValue;
+                    });
+                    propertyElements.Add(floatValue);
+                    propertiesSection.Add(new BlackboardRow(blackboardField, floatValue));
+                    break;
+                case TransformProperty p:
+                    var positionValue = new Vector3Field(){value = prop.property.value.TransformValue.position, label = "Position: "};
+                    positionValue.RegisterValueChangedCallback(evt3 => {
+                        prop.property.value.TransformValue.position = evt3.newValue;
+                    });
+                    var scaleValue = new Vector3Field(){value = prop.property.value.TransformValue.scale, label = "Scale: "};
+                    scaleValue.RegisterValueChangedCallback(evt3 => {
+                        prop.property.value.TransformValue.scale = evt3.newValue;
+                    });
+                    var rotationValue = new Vector3Field(){value = prop.property.value.TransformValue.scale, label = "Rotation: "};
+                    rotationValue.RegisterValueChangedCallback(evt3 => {
+                        prop.property.value.TransformValue.rotation = evt3.newValue;
+                    });
+                    var container = new VisualElement();
+                    propertyElements.Add(container);
+                    container.Add(positionValue);
+                    container.Add(scaleValue);
+                    container.Add(rotationValue);
+                    propertiesSection.Add(new BlackboardRow(blackboardField, container));
+                    break;
+            }
         }
+        void AddBehaviourToBlackboard(StateBehaviour behaviour, int index = 0){
+            var blackboardField = new BlackboardField(){
+                text = behaviour.name,
+                typeText = "Behaviour",
+            };
+            blackboardField.userData = blackboardField.userData = new BlackboardFieldPropertyData(){
+                type = BlackboardFieldPropertyData.FieldType.Behaviour,
+                index =  index
+            };
+            behavioursSection.Add(blackboardField);
+        }
+
         void ParameterCreationHandler<T>(object targetObject) where T : Parameter {
             var newParameter = ScriptableObject.CreateInstance<T>();
             var listOfParameters = new List<string>();
@@ -294,7 +367,8 @@ namespace FSM.Graph {
                 listOfParameters.Add(p.parameterName);
             });
             newParameter.name = ObjectNames.GetUniqueName(listOfParameters.ToArray(), typeof(T).Name);
-            main.AddParameter(newParameter);
+            main.AddData(newParameter);
+            main.GenerateListOfParameters();
             var newWrapper = new ParameterWrapper(){
                 parameter = newParameter,
                 parameterName = newParameter.name
@@ -310,8 +384,8 @@ namespace FSM.Graph {
             properties.ForEach(p => {
                 listOfProperties.Add(p.propertyName);
             });
-            newProperty.name = ObjectNames.GetUniqueName(listOfProperties.ToArray(), typeof(T).Name);
-            main.AddProperty(newProperty);
+            newProperty.name = ObjectNames.GetUniqueName(listOfProperties.ToArray(), typeof(T).Name); 
+            main.AddData(newProperty);
             var newWrapper = new ExposedPropertyWrapper(){
                 property = newProperty,
                 propertyName = newProperty.name
@@ -319,6 +393,24 @@ namespace FSM.Graph {
             properties.Add(newWrapper);
             AssetDatabase.SaveAssets();
             GenerateBlackboard();
+        }
+        void BehaviourCreationHandler(object targetObject){
+            var type = targetObject as System.Type;
+            var newBehaviour = ScriptableObject.CreateInstance(type) as StateBehaviour;
+            newBehaviour.name = newBehaviour.GetType().Name;
+            main.AddData(newBehaviour);
+            behaviours.Add(newBehaviour);
+            AssetDatabase.SaveAssets();
+            GenerateBlackboard();
+        }
+        void CreateBehaviourHandler(object targetObject) {
+            var settings = AssetDatabase.LoadAssetAtPath<FSMSettings>(pathToSettings);
+            var pathToScript = AssetDatabase.GenerateUniqueAssetPath(settings.PathToBehaviours + "NewStateBehaviour.cs");
+            Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(settings.PathToTemplate);
+            ProjectWindowUtil.CreateScriptAssetFromTemplateFile(settings.PathToTemplate, System.IO.Path.GetFileName(pathToScript));
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(pathToScript);
         }
         void OnDisable() {
             StateMachineController.OnStateUpdated -= SetNodeHighlight;

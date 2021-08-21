@@ -26,19 +26,6 @@ namespace FSM {
             Destroy(toDelete);
         #endif
         }
-        void LateUpdate() {
-            if (!m_ExecuteInEditor && Application.isEditor && !Application.isPlaying) return;
-            for (int i = 0; i < m_Bindings.Count; i++) {
-                var binding = m_Bindings[i];
-                if (binding == null) {
-                    Debug.LogWarning(string.Format("Property binder at index {0} of GameObject {1} is null or missing", i, gameObject.name));
-                    continue;
-                }
-                else {
-                    if (binding.IsValid(this)) binding.UpdateBinding(this);
-                }
-            }
-        }
         public T AddPropertyBinder<T>() where T : FSMBinderBase {
             return gameObject.AddComponent<T>();
         }
@@ -46,42 +33,9 @@ namespace FSM {
             if (binder.gameObject == this.gameObject)
                 SafeDestroy(binder);
         }
-        private void Start() {
-            if (controller == null) return;
-            controllerInstance = controller.Clone(this); 
-            controllerInstance.CloneStateBehaviours();
-            if (EditorWindow.HasOpenInstances<StateMachineGraphWindow>()){
-                var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
-                if (window.controller == controller) {
-                    StateMachineGraphWindow.OpenGraphWindow(controllerInstance);
-                    selected = true;
-                }
-            }          
-            controllerInstance.SetState(controllerInstance.GetEntryState());
-        }
-        private void OnEnable() {
-            StateMachineGraphWindow.OnControllerSelected += OnControllerChanged;
-        }
-        private void OnDisable() {
-            StateMachineGraphWindow.OnControllerSelected -= OnControllerChanged;
-        }
         void OnControllerChanged(StateMachineController newController) {
             if (controllerInstance == null) return;
             selected = newController == controllerInstance;
-        }
-        private void OnApplicationQuit() {
-            controller?.InitalizeControllers(controller);
-            if (EditorWindow.HasOpenInstances<StateMachineGraphWindow>()){
-                var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
-                if (window.controller == controllerInstance) {
-                    window.ReloadGraph(controller);
-                }
-            }
-        }
-        private void Update() {
-            if (controllerInstance == null) return;
-            activeState = controllerInstance.CurrentState == null ? "No State" : controllerInstance.CurrentState.stateName;
-            controllerInstance?.UpdateCurrentState(this, selected);
         }
 
 #region Parameter Methods
@@ -95,6 +49,15 @@ namespace FSM {
                 param.value.FloatValue = value;
                 if (selected) OnParameterChanged?.Invoke(param.name);
             }
+        }
+        public void SetFloatAdditive(string parameter, float value) {
+            var param = controllerInstance.GetParameter<FloatParameter>(parameter.GetHashCode());
+            if (param == null) {
+                Debug.Log($"Parameter name '{parameter.GetHashCode()}' was not found");
+                return;
+            }
+            param.value.FloatValue += value;
+            if (selected) OnParameterChanged?.Invoke(param.name);
         }
         public void SetFloat(int parameter, float value) {
             var param = controllerInstance.GetParameter<FloatParameter>(parameter);
@@ -170,8 +133,88 @@ namespace FSM {
         public float GetFloat(int parameter) => controllerInstance.GetParameter<FloatParameter>(parameter).value.FloatValue;
         public int GetInt(int parameter) => controllerInstance.GetParameter<IntParameter>(parameter).value.IntValue;
         public bool GetBool(int parameter) => controllerInstance.GetParameter<BoolParameter>(parameter).value.BoolValue;
-        public bool HasTransform(int property) => controller.GetProperty<TransformProperty>(property) != null;
+        public T GetProperty<T>(string propertyName) => controllerInstance.GetProperty<T>(propertyName.GetHashCode());
+        public bool TryGetProperty<T> (string propertyName, out T property) => controllerInstance.TryGetProperty(
+            propertyName.GetHashCode(),
+            out property);
+
+        public bool HasTransform(int property) => controller.GetProperty<TransformData>(property) != null;
 #endregion
+
+#region MonoBehaviour Methods
+        private void Start() {
+            if (controller == null) return;
+            controllerInstance = controller.Clone(this); 
+            controllerInstance.CloneStateBehaviours();
+            if (EditorWindow.HasOpenInstances<StateMachineGraphWindow>()){
+                var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
+                if (window.controller == controller) {
+                    StateMachineGraphWindow.OpenGraphWindow(controllerInstance);
+                    selected = true;
+                }
+            }          
+            controllerInstance.SetState(controllerInstance.GetEntryState());
+        }
+        private void OnEnable() {
+            StateMachineGraphWindow.OnControllerSelected += OnControllerChanged;
+        }
+        private void OnDisable() {
+            StateMachineGraphWindow.OnControllerSelected -= OnControllerChanged;
+        }
+        private void Update() {
+            if (controllerInstance == null) return;
+            activeState = controllerInstance.CurrentState == null ? "No State" : controllerInstance.CurrentState.stateName;
+            controllerInstance?.UpdateCurrentState(this, selected);
+        }
+        void LateUpdate() {
+            if (!m_ExecuteInEditor && Application.isEditor && !Application.isPlaying) return;
+            for (int i = 0; i < m_Bindings.Count; i++) {
+                var binding = m_Bindings[i];
+                if (binding == null) {
+                    Debug.LogWarning(string.Format("Property binder at index {0} of GameObject {1} is null or missing", i, gameObject.name));
+                    continue;
+                }
+                else {
+                    if (binding.IsValid(this)) binding.UpdateBinding(this);
+                }
+            }
+        }
+        void OnControllerColliderHit(ControllerColliderHit hit) {
+            controllerInstance?.OnFSMControllerColliderHit(hit, this);
+        }
+        void OnCollisionEnter(Collision collision) {
+            controllerInstance?.OnFSMCollisionEnter(collision, this);
+        }
+        void OnCollisionExit(Collision collision) {
+            controllerInstance?.OnFSMCollisionExit(collision, this);
+        }
+        void OnCollisionStay(Collision collision) {
+            controllerInstance?.OnFSMCollisionStay(collision, this);
+        }
+        void OnTriggerEnter(Collider collider) {
+            controllerInstance?.OnFSMTriggerEnter(collider, this);
+        }
+        void OnTriggerExit(Collider collider) {
+            controllerInstance?.OnFSMTriggerExit(collider, this);
+        }
+        void OnTriggerStay(Collider collider) {
+            controllerInstance?.OnFSMTriggerStay(collider, this);
+        }
+        void OnAnimatorMove() {
+            controllerInstance?.OnFSMAnimatorMove(this);
+        }
+        void OnApplicationQuit() {
+            controller?.InitalizeControllers(controller);
+            if (EditorWindow.HasOpenInstances<StateMachineGraphWindow>()){
+                var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
+                if (window.controller == controllerInstance) {
+                    window.ReloadGraph(controller); 
+                }
+            }
+        }
+#endregion
+
+#region Editor
     #if UNITY_EDITOR
         [CustomEditor(typeof(StateMachineRuntime))]
         class StateMachineRuntimeEditor : Editor {
@@ -286,5 +329,6 @@ namespace FSM {
             }
         }
     #endif
+#endregion
     }
 }

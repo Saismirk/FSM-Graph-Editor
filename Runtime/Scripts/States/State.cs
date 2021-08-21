@@ -63,7 +63,46 @@ namespace FSM {
                 behaviour?.OnExit(runtime, stateMachine, this);
             });
         }
-
+        public virtual void OnFSMControllerColliderHit(ControllerColliderHit hit, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMControllerColliderHit(hit, runtime);
+            });
+        }
+        public virtual void OnFSMCollisionEnter(Collision collision, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMCollisionEnter(collision, runtime);
+            });
+        }
+        public virtual void OnFSMCollisionExit(Collision collision, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMCollisionExit(collision, runtime);
+            });
+        }
+        public virtual void OnFSMCollisionStay(Collision collision, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMCollisionStay(collision, runtime);
+            });
+        }
+        public virtual void OnFSMTriggerEnter(Collider collider, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMTriggerEnter(collider, runtime);
+            });
+        }
+        public virtual void OnFSMTriggerExit(Collider collider, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMTriggerExit(collider, runtime);
+            });
+        }
+        public virtual void OnFSMTriggerStay(Collider collider, StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMTriggerStay(collider, runtime);
+            });
+        }
+        public virtual void OnFSMAnimatorMove(StateMachineRuntime runtime) {
+            stateBehavioursInstance.ForEach(behaviour => {
+                behaviour?.OnFSMAnimatorMove(runtime);
+            });
+        }
         public void AddTransition(State state, bool outward = false) {
             Undo.RecordObject(this, "Creation (Transition)");
             var transition = CreateInstance<StateTransition>();
@@ -182,7 +221,8 @@ namespace FSM {
                 serializedObject.ApplyModifiedProperties();
             }
         }
-        #endif
+
+#endif
     }
 
     [System.Serializable]
