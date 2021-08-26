@@ -29,7 +29,7 @@ namespace FSM.Graph {
         Vector4 inspectorBorders, blackboardBorders;
         Vector2 blackboardPosition;
         private string currentSelectedGuid;
-        const string pathToSettings = "Assets/Editor/FSMEditor/FSMSettings.asset";
+        const string pathToSettings = "Assets/FSMGraphEditor/Editor/FSMEditor/FSMSettings.asset";
         internal Dictionary<Edge, (State, State)> TransitionMap {get; private set;}
 
         bool BlackboardPositionChanged {

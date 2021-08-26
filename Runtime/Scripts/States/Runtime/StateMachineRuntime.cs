@@ -30,7 +30,7 @@ namespace FSM {
             return gameObject.AddComponent<T>();
         }
         public void RemovePropertyBinder(FSMBinderBase binder) {
-            if (binder.gameObject == this.gameObject)
+            if (binder.gameObject == gameObject)
                 SafeDestroy(binder);
         }
         void OnControllerChanged(StateMachineController newController) {
@@ -109,7 +109,7 @@ namespace FSM {
                 return;
             }
             if (param.value.BoolValue != value) {
-                //Debug.Log($"{param.name} Bool parameter changed to {value}");
+                //Debug.Log($"Bool parameter {parameter} set to: {value} in {this}");
                 param.value.BoolValue = value;
                 if (selected) OnParameterChanged?.Invoke(param.name);
             }
@@ -147,15 +147,16 @@ namespace FSM {
         private void Start() {
             if (controller == null) return;
             controllerInstance = controller.Clone(this); 
-            controllerInstance.CloneStateBehaviours();
+            controllerInstance.globalBehaviours.ForEach(b => {
+                b.OnEnter(this, controllerInstance, null);
+            });
             if (EditorWindow.HasOpenInstances<StateMachineGraphWindow>()){
                 var window = EditorWindow.GetWindow<StateMachineGraphWindow>();
                 if (window.controller == controller) {
                     StateMachineGraphWindow.OpenGraphWindow(controllerInstance);
-                    //Debug.Log("Opening instanced controller");
                     selected = true;
                 }
-            }          
+            }  
             controllerInstance.SetState(controllerInstance.GetEntryState());
         }
         private void OnEnable() {
@@ -283,6 +284,8 @@ namespace FSM {
                 serializedObject.Update();
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(controllerProp);
+                EditorGUILayout.LabelField($"Current State: {Controller.controllerInstance?.CurrentState?.name}");
+                EditorGUILayout.LabelField($"Current State: {Controller.controllerInstance?.PreviousState?.name}");
                 EditorGUILayout.Space();
                 propertyList.DoLayoutList();
                 EditorGUILayout.Space();

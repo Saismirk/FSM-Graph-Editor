@@ -24,13 +24,12 @@ namespace FSM {
         public Vector2 position;
         public List<StateTransition> transitions = new List<StateTransition>();
         public List<StateBehaviour> stateBehaviours =  new List<StateBehaviour>();
-        public List<StateBehaviour> stateBehavioursInstance =  new List<StateBehaviour>();
         [SerializeField] StateMachineController stateMachine;
         [SerializeField] StateMachineControllerBase owner;
-        public bool CheckTransitions() {
+        public bool CheckTransitions(StateMachineController stateMachine) {
             foreach (var transition in transitions) {
-                if (transition.CheckTransition(out State state)) { 
-                    stateMachine.SetState(state is ExitState ? stateMachine.GetEntryState() : state);
+                if (transition.CheckTransition(stateMachine, out State state)) { 
+                    stateMachine?.SetState(state is ExitState ? stateMachine?.GetEntryState() : state);
                     return true;
                 }
             }
@@ -41,65 +40,80 @@ namespace FSM {
             Owner = owner;
         }
 
-        internal void CloneBehaviours() {
-            stateBehavioursInstance =  new List<StateBehaviour>();
-            stateBehaviours.ForEach(b => {
-                stateBehavioursInstance.Add(Instantiate(b));
+        internal void CloneData(State reference) {
+            CloneBehaviours(reference);
+            CloneTransitions(reference);
+        }
+
+        void CloneBehaviours(State reference) {
+            stateBehaviours =  new List<StateBehaviour>();
+            reference.stateBehaviours.ForEach(b => {
+                var newBehaviour = Instantiate(b);
+                newBehaviour.name = b.name + $"({Owner.name})";
+                stateBehaviours.Add(newBehaviour);
+            });
+        }
+        void CloneTransitions(State reference) {
+            transitions =  new List<StateTransition>();
+            reference.transitions.ForEach(t => {
+                if (t != null) {
+                    transitions.Add(Instantiate(t));
+                }
             });
         }
 
         public virtual void OnStateEnter(StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnEnter(runtime, stateMachine, this);
             });
         }
         public virtual void OnStateUpdate(StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnUpdate(runtime, stateMachine, this);
             });
         }
         public virtual void OnStateExit(StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnExit(runtime, stateMachine, this);
             });
         }
         public virtual void OnFSMControllerColliderHit(ControllerColliderHit hit, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMControllerColliderHit(hit, runtime);
             });
         }
         public virtual void OnFSMCollisionEnter(Collision collision, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMCollisionEnter(collision, runtime);
             });
         }
         public virtual void OnFSMCollisionExit(Collision collision, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMCollisionExit(collision, runtime);
             });
         }
         public virtual void OnFSMCollisionStay(Collision collision, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMCollisionStay(collision, runtime);
             });
         }
         public virtual void OnFSMTriggerEnter(Collider collider, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMTriggerEnter(collider, runtime);
             });
         }
         public virtual void OnFSMTriggerExit(Collider collider, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMTriggerExit(collider, runtime);
             });
         }
         public virtual void OnFSMTriggerStay(Collider collider, StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMTriggerStay(collider, runtime);
             });
         }
         public virtual void OnFSMAnimatorMove(StateMachineRuntime runtime) {
-            stateBehavioursInstance.ForEach(behaviour => {
+            stateBehaviours.ForEach(behaviour => {
                 behaviour?.OnFSMAnimatorMove(runtime);
             });
         }

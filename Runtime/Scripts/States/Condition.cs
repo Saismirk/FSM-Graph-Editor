@@ -18,7 +18,7 @@ namespace FSM {
         public void Init(StateMachineController controller) {
             this.controller = controller;
         }
-        public bool CheckCondition() {
+        public bool CheckCondition(StateMachineController controller) {
             //Debug.Log($"Checking condition for parameter {controller.parameters[selectedParamenterIndex].parameter}: {controller.parameters[selectedParamenterIndex].parameter.value.BoolValue}");
             bool result = controller.parameters[selectedParamenterIndex].parameter switch {
                 BoolParameter b => boolConditionType switch {

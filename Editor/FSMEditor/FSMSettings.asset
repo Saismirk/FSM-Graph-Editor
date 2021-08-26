@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: FSMSettings
   m_EditorClassIdentifier: 
   PathToScripts: Assets/FSM/Scripts/
-  PathToTemplate: Assets/FSM/Behaviours/StateBehaviourTemplate.cs.txt
-  PathToBehaviours: Assets/FSM/Behaviours/
+  PathToTemplate: Assets/FSMGraphEditor/Runtime/Behaviours/StateBehaviourTemplate.cs.txt
+  PathToBehaviours: Assets/FSMGraphEditor/Runtime/Behaviours

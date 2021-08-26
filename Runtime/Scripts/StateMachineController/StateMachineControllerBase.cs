@@ -9,7 +9,6 @@ namespace FSM {
         [SerializeField] internal List<State> states = new List<State>();
         [SerializeField] internal List<SubStateMachineController> subStates = new List<SubStateMachineController>();
         [SerializeField] internal List<StateBehaviour> globalBehaviours = new List<StateBehaviour>();
-        [SerializeField] internal List<StateBehaviour> globalBehaviourInstances = new List<StateBehaviour>();
         [SerializeField] protected string currentState, previousState;
         public int depth = 0;
         public State CreateState(System.Type type, Vector2 position = default, bool undo = true) {
@@ -35,20 +34,28 @@ namespace FSM {
             AssetDatabase.SaveAssets();
             return state;
         }
-        internal void CloneStateBehaviours() {
-            states.ForEach(s => {
-                s.CloneBehaviours();
-            });
-            subStates.ForEach(s => {
-                s.CloneStateBehaviours();
-            });
-            globalBehaviourInstances =  new List<StateBehaviour>();
-            globalBehaviours.ForEach(b => {
-                globalBehaviourInstances.Add(Instantiate(b));
+        internal void CloneStates(StateMachineControllerBase reference) {
+            states =  new List<State>();
+            reference.states.ForEach(s => {
+                var newState = Instantiate(s);
+                newState.name = s.name + $"({reference.name})";
+                newState.CloneData(s);
+                newState.guid = s.guid;
+                newState.Init(this is StateMachineController ? this as StateMachineController : (this as SubStateMachineController).main, this);
+                states.Add(newState);
             });
         }
+        internal void AddStatesToHashmap(ref Dictionary<string, State> stateHashmap) {
+            foreach (var s in states) {
+                if (!stateHashmap.ContainsKey(s.guid)){
+                    stateHashmap.Add(s.guid, s);
+                }
+            }
+            foreach (var ss in subStates) {
+                ss.AddStatesToHashmap(ref stateHashmap);
+            }
+        }
         internal abstract string GetPath(bool noSelf);
-
         internal List<State> GetTransitionableStates() {
             var list = new List<State>();
             return states.Where(s => !(s is UpState) && !(s is EntryState) && !(s is AnyState)).ToList();
@@ -124,9 +131,8 @@ namespace FSM {
             return parent.transitions;
         }
         internal EntryState GetEntryState() {
-            var entry = states?.Where(state => state is EntryState)?.ToList();
-            if (entry != null && entry.Any()) return entry.First() as EntryState;
-            return null;
+            var entry =  states?.First(state => state is EntryState) as EntryState;
+            return entry;
         }
         internal void GetParents(ref List<StateMachineControllerBase> parents) {
             if (this is SubStateMachineController) {

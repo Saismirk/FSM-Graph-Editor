@@ -15,12 +15,13 @@ namespace FSM {
         public void Init(StateMachineController controller) {
             this.controller = controller;
         }
-        public bool CheckTransition(out State state) {
+        public bool CheckTransition(StateMachineController controller, out State state) {
             state = null;
             foreach (var condition in conditions) {
-                if (!condition.CheckCondition()) return false;
+                if (!condition.CheckCondition(controller)) return false;
             }
             state = stateToTransition;
+            //Debug.Log($"Transition is true: {state}");
             return true;
         }
 

@@ -19,12 +19,17 @@ namespace FSM {
         StateMachineRuntime runtime;
         Dictionary<int, int> parameterHashSet = new Dictionary<int, int>();
         Dictionary<int, int> propertyHashSet = new Dictionary<int, int>();
+        Dictionary<string, State> stateHashmap = new Dictionary<string, State>();
         public static event System.Action<State, bool> OnStateUpdated;
         public virtual void SetState(State newState) {
             if(CurrentState?.guid == newState.guid) return;
+            if (!stateHashmap.TryGetValue(newState.guid, out var state)) {
+                Debug.Log($"State {newState.name} not found: {newState.guid} : {stateHashmap.Count}");
+                return;
+            }
             CurrentState?.OnStateExit(runtime);
             PreviousState = CurrentState;
-            CurrentState = newState;
+            CurrentState = state;
             CurrentState?.OnStateEnter(runtime);
             currentState = CurrentState.GetType().ToString();
             previousState = PreviousState?.GetType().ToString();
@@ -56,7 +61,12 @@ namespace FSM {
         }
         public StateMachineController Clone(StateMachineRuntime stateMachine) {
             var controller = Instantiate(this);
+            controller.name = name + $"({stateMachine.gameObject.name})";
             controller.Init(stateMachine);
+            controller.globalBehaviours = new List<StateBehaviour>();
+            globalBehaviours.ForEach(b => {
+                controller.globalBehaviours.Add(Instantiate(b));
+            });
             parameters.ForEach(parameter => {
                 controller.parameters.Add(parameter.Clone());
             });
@@ -75,6 +85,18 @@ namespace FSM {
                 controller.propertyHashSet.Add(p.propertyID, i);
                 i++;
             });
+            controller.states = new List<State>();
+            controller.CloneStates(this);
+            controller.subStates = new List<SubStateMachineController>();
+            subStates.ForEach(s => {
+                var newSubState = Instantiate(s);
+                newSubState.name = s.name;
+                newSubState.main = controller;
+                newSubState.CloneStates(s);
+                controller.subStates.Add(newSubState);
+            });
+            controller.anyStates = states.Where(s => s is AnyState).Cast<AnyState>().ToList();
+            controller.AddStatesToHashmap(ref controller.stateHashmap);
             InitalizeControllers(controller);
             return controller;
         }
@@ -101,39 +123,67 @@ namespace FSM {
             }
         }
         internal void UpdateCurrentState(StateMachineRuntime stateMachine, bool updateCallback) {
+            globalBehaviours.ForEach(b => {
+                //Debug.Log($"Updating behaviour {b.name} | {stateMachine.name}");
+                b.OnUpdate(stateMachine, this, CurrentState);
+            });
             CurrentState?.OnStateUpdate(stateMachine);
             if (updateCallback) OnStateUpdated?.Invoke(CurrentState, true);
-            if (CurrentState.LockedState) return;
-            if(CurrentState.CheckTransitions()) return;
-
+            if(CurrentState != null && CurrentState.CheckTransitions(this)) {
+                return;
+            }
             anyStates?.ForEach(anyState => {
-                if (anyState.CheckTransitions()) return;
+                if (anyState.CheckTransitions(this)) return;
             });
-            var subState = CurrentState.Owner as SubStateMachineController;
-            subState?.exitState.CheckTransitions();
+            var subState = CurrentState?.Owner as SubStateMachineController;
+            subState?.exitState.CheckTransitions(this);
         }
         internal void OnFSMControllerColliderHit(ControllerColliderHit hit, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMControllerColliderHit(hit, stateMachine);
+            });
             CurrentState?.OnFSMControllerColliderHit(hit, stateMachine);
         }
         internal void OnFSMCollisionEnter(Collision collision, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMCollisionEnter(collision, stateMachine);
+            });
             CurrentState?.OnFSMCollisionEnter(collision, stateMachine);
         }
         internal void OnFSMCollisionExit(Collision collision, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMCollisionExit(collision, stateMachine);
+            });
             CurrentState?.OnFSMCollisionExit(collision, stateMachine);
         }
         internal void OnFSMCollisionStay(Collision collision, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMCollisionStay(collision, stateMachine);
+            });
             CurrentState?.OnFSMCollisionStay(collision, stateMachine);
         }
         internal void OnFSMTriggerEnter(Collider collider, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMTriggerEnter(collider, stateMachine);
+            });
             CurrentState?.OnFSMTriggerEnter(collider, stateMachine);
         }
         internal void OnFSMTriggerExit(Collider collider, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMTriggerExit(collider, stateMachine);
+            });
             CurrentState?.OnFSMTriggerExit(collider, stateMachine);
         }
         internal void OnFSMTriggerStay(Collider collider, StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMTriggerStay(collider, stateMachine);
+            });
             CurrentState?.OnFSMTriggerStay(collider, stateMachine);
         }
         internal void OnFSMAnimatorMove(StateMachineRuntime stateMachine) {
+            globalBehaviours.ForEach(b => {
+                b.OnFSMAnimatorMove(stateMachine);
+            });
             CurrentState?.OnFSMAnimatorMove(stateMachine);
         }
         
